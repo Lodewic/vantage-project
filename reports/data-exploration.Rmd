@@ -1,0 +1,145 @@
+---
+title: "Data exploration"
+author: "Lodewic van Twillert"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: yes
+    theme: cerulean
+params:
+  echo:
+    value: FALSE
+    input: checkbox
+  project.name: 
+    label: "Short name used for this project"
+    value: Exploratory analysis
+    input: character
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, message=FALSE, warning=FALSE}
+# Load libraries
+library(tidyverse)
+library(broom)
+library(leaflet)
+library(DT)
+```
+
+```{r Temporary included convenience functions, include=FALSE}
+ShowDataTable <- function(df) {
+  DT::datatable(df,
+    class   = 'cell-border stripe compact hover',
+    escape  = F, selection = 'multiple',
+    extensions = c("Responsive", "Scroller"),
+    # filter = "top",
+    options = list(
+      scrollY = "40vh",
+      scroller = TRUE,
+      deferRender = TRUE,
+      scrollX = TRUE,
+      autoWidth  = T,
+      paging = TRUE, server = T)
+  )
+}
+```
+
+## Tanzania water pumps data
+
+Tanzania water pump data
+
+- Not a timeseries as initially expected
+- Waterpumps are mostly 
+
+```{r}
+# Hyper parameters
+
+# Read data
+df <- read.csv("../data/raw/water_pump_set.csv")
+labels <- read.csv("../data/raw/water_pump_labels.csv")
+
+# Show data
+head(df)
+head(labels)
+```
+
+In total we have 40 features that we can use to predict the labels.
+
+- id - Unique identifier of measurement
+-	amount_tsh - Total static head (amount water available to waterpoint)
+-	date_recorded - The date the row was entered
+-	funder - Who funded the well
+-	gps_height - Altitude of the well
+-	installer - Organization that installed the well
+-	longitude - GPS coordinate 
+-	latitude - GPS coordinate
+-	wpt_name - Name of the waterpoint if there is one
+-	num_private - 
+-	basin - Geographic water basin
+-	subvillage - Geographic location
+-	region - Geographic location
+-	region_code - Geographic location (coded)
+-	district_code - Geographic location (coded)
+-	lga - Geographic location
+-	ward - Geographic location
+-	population - Population around the well
+-	public_meeting - True/False
+-	recorded_by - Group entering this row of data
+-	scheme_management - Who operates the waterpoint
+-	scheme_name - Who operates the waterpoint
+-	permit - If the waterpoint is permitted
+-	construction_year - Year the waterpoint was constructed
+-	extraction_type - The kind of extraction the waterpoint uses
+-	extraction_type_group - The kind of extraction the waterpoint uses 
+-	extraction_type_class - The kind of extraction the waterpoint uses
+-	management - How the waterpoint is managed
+-	management_group - How the waterpoint is managed
+-	payment - What the water costs
+-	payment_type - What the water costs
+-	water_quality - The quality of the water
+-	quality_group - The quality of the water
+-	quantity - The quantity of water
+-	quantity_group - The quantity of water
+-	source - The source of the water
+-	source_type - The source of the water
+-	source_class - The source of the water
+-	waterpoint_type - The kind of waterpoint
+-	waterpoint_type_group - The kind of waterpoint
+
+```{r Describe columns}
+add_na_col <- function(x){
+  mutate(x, na = 0)
+}
+
+has_n_col <- function(x, n = 6){
+  return(ncol(x) == n)
+}
+
+summarise_char <- function(x) {
+  list(n_unique = length(unique(x)),
+       n_empty = length(x == "" | is.na(x)))
+}
+
+# Summarise numerical values
+df %>% 
+  select_if(is.numeric)  %>%
+  map(~as.tibble(c(
+    summary(.x),                        # compute tidy summary of each var
+    list(nonzero = sum(.x != 0),        # Add number of nonzero values
+         unique = length(unique(.x)))      # Add number of unique values
+    ))) %>%  
+  do.call(rbind, .) -> df_num_summary  # bind list elements into df
+            
+# Summarise non-numerical values like categories and strings
+df %>% 
+  select_if(function(x) !is.numeric(x)) %>%
+  map(~as.tibble(c()))
+  
+
+```
+

@@ -18,6 +18,14 @@ dependencies:
 - coverage
 - flake8
 - pip
+- r-essentials
+- rstudio
+- r-reticulate
+- r-DT
+- r-leaflet
+- r-tidyverse
+- r-plotly
+- r-caret
 - pip:
   - pytest-runner
   - awscli
