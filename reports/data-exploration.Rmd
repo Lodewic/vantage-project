@@ -1,0 +1,414 @@
+---
+title: "Data exploration"
+author: "Lodewic van Twillert"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: yes
+    theme: cerulean
+    code_folding: hide
+params:
+  echo:
+    value: FALSE
+    input: checkbox
+  project.name: 
+    label: "Short name used for this project"
+    value: Exploratory analysis
+    input: character
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+
+knitr::knit_engines$set(python = reticulate::eng_python) # Not needed with knitr version > 1.18
+
+library(reticulate)
+### NOTE ABOUT RETICULATE WITH CONDA ENVIRONMENTS ####
+# You can NOT use non-activated environments with use_condaenv()!
+#   Issue here https://github.com/rstudio/reticulate/issues/292 still open
+# This means you need to start rstudio from within an activated environment
+# i.e. on Unix
+#   source activate vantage-project
+#   rstudio vantage-project.Proj
+# On windows CMD (not powershell)
+#   conda env create -f environment.yml
+#   activate vantage-project
+#   "C:\Program Files\RStudio\bin\rstudio.exe"
+# This will start RStudio using the Conda environment so that you can use the 
+# activated environment and the related Python version / packages
+# To render this document using the conda environment you can use,
+#   R -e "rmarkdown::render('data-exploration.Rmd')"
+
+use_condaenv('vantage-project', required = TRUE)    # Hopefully this issue is fixed and this will just work if the environment wasn't already activated
+# use_python('D:/Anaconda/envs/vantage-project/python.exe')   # Alternatively this should work if you have an absolute path
+
+# A major issue is that (on Windows) we can't use python chunks in combination with conda
+# A workaround is to run all python code from external scripts or use reticulate::py_run_string()
+```
+
+```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
+# Load libraries
+library(tidyverse)
+library(broom)
+library(ggthemes)
+library(DT)
+library(leaflet)
+```
+
+```{r Python packages}
+# PYTHON
+
+# There are some issues with reticulate which causes R to crash when using
+# python chunks in Rmarkdown with python from a conda environment
+#   Might not be the case on Ubuntu / AWS servers but for now we use a workaround
+#   with py_run_string()
+
+py_run_string("
+import dill
+import sklearn as sk
+import numpy as np
+import pandas as pd
+")
+```
+
+```{r Python read data}
+# Python code
+
+# Read data from s3 amazon instance
+py_run_string("
+data = pd.read_csv('https://s3.amazonaws.com/drivendata/data/7/public/4910797b-ee55-40a7-8668-10efd5c1b960.csv', encoding = 'iso-8859-1')
+labels = pd.read_csv('https://s3.amazonaws.com/drivendata/data/7/public/0bf8bc6e-30d0-4c50-956a-603fc693d966.csv', encoding = 'iso-8859-1')
+
+# A .docx was provided with feature descriptions. This was formatted as a csv file.
+features = pd.read_csv('../data/raw/water_pump_features.csv')
+")
+```
+
+```{r Temporary included convenience functions, include=FALSE}
+ShowDataTable <- function(df) {
+  datatable(df,
+    # filter = "top",
+    options = list(
+      scrollX = TRUE,
+      # autoWidth  = T,
+      paging = FALSE)
+  )
+}
+```
+
+# Predicting Tanzania water pump maintenance
+
+### The data
+
+The case presented here is about water pumps in Tanzania. The data set originates from the Tanzanian Ministry of Water. Currently, this ministry maintains its pumps based on a maintenance schedule or, of course, when they break down. We feel that the maintenance of the Tanzanian water pumps could improve in both the cost of maintenance and the prevention of break downs by introducing machine learning to predict if a water pump is in need of repair or even the moment of failure of each water pump. 
+
+### Objective
+
+Our objective is to develop a reproducible model that can predict which pumps will fail in the future, either the moment or just whether they fail. The resulting model is to be used by the Tanzanian government to effectively maintain their water pumps.
+
+Normally for this type of data you would expect that a single water pump was measured
+over-time and using this data we could predict the need for repairs for a given pump. In this case however, at 
+every practically every timepoint a different water point was measured! So we have to make some assumptions about the
+data and the approach to how we create a model.
+
+#### Assumptions
+
+**We should know in advance which water point should be predicted**, there must be something like a 
+maintenance schedule at least 3 days ahead. We make this assumption because we have to able to take
+into account the measured variables about the water pumps.!
+
+**Measured variable should all be assumed to be known in advance**, otherwise we should choose
+to leave out some variables that may have only become known at the time of determining the functioning of a water pump.
+Variables like the `funder` and `district_code` are clearly known ahead of maintenance, but other variables like 
+`water_quality` and `amount_tsh` (total amount water available to waterpoint) may not be known before determining the state of the pump.
+
+# Getting a feeling for the data
+
+Before we start modelling the data we should understand the data. In this dataset
+we find a total of 40 measured variables to be used as features in our models. In this
+section we will aim to understand these features and make motivated choices to keep, remove or transform these
+features from our prediction model.
+
+## A closer look at our features
+
+Our data consists of,
+  - `r nrow(py$data)` observations 
+  - `r ncol(py$data)` features
+  - `r length(unique(py$labels[,2]))` types of labels to predict
+  
+Not all of the features are necessarily useful for predicting the moment of failure of water pumps, 
+for instance the measurement `id` won't be of much use at it is unique.
+
+First we'll take a look at the raw data to fully understand the structure of our data,
+especially how exactly the data was measured over time. We have `r nrow(py$data)` observations.
+
+### Raw data
+
+```{r}
+ShowDataTable(py$data[1:6,])
+```
+
+With the data above we will aim to predict the labels, indicating the need of repair
+or rather the functional state of water pumps. There are `r nrow(py$labels)`  possible labels,
+
+`r for (lab in unique(py$labels[,2])) cat(paste0("\t- ", lab, "(", round(sum(py$labels[,2] == lab) / nrow(py$labels), 2), "%)\n"))`
+
+Each of these labels is associated with a unique measurement `id`.
+
+```{r}
+head(py$labels)
+```
+
+### Features
+
+```{r Function to determine groups to reach cover percentile of data}
+calc_groups_percentile <- function(x, p=0.8) {
+  if ((length(unique(x)) / length(x)) > 1-p) return(unique(x))
+  group_counts <- table(x) / length(x)
+  
+  print(x[1])
+  
+  # Number of groups needed to cover given quantile
+  group_cumsum <- cumsum(sort(group_counts, decreasing = T))
+  num_groups <- which(group_cumsum >= p)[1]
+  return(num_groups)
+  
+}
+
+calc_groups_coverage <- function(x, maxgroups = 10) {
+  if (class(x) == "list") x <- unlist(x)
+  if (class(x) != "numeric") x <- as.character(x)
+  print(class(x))
+  print(length(unique(x)))
+  
+  if (maxgroups >= length(unique(x))) return(1)
+  # else...
+  ratios = sort(table(x))[1:maxgroups] / length(x)
+  return(sum(ratios, na.rm=T))
+
+}
+```
+
+The most important part of this project is, of course, the data. The data consists of
+measured variables that we can use to predict the status of a given water pump. 
+
+```{r Add additional info to feature description}
+feature_desc <- py$features %>%
+  mutate(example = as.character(py$data[1, -1]), # First row of the data without the 'id' column
+         unique = map_int(py$data[,-1],function(x) length(unique(x))),
+         type = map_chr(py$data[,-1], function(x) ifelse(is.numeric(x), "numeric", "character")))
+
+# Number of existing groups required to cover at least 80% of the data
+group_req <- map(py$data, calc_groups_percentile, p=0.8)
+# Coverage of data using only the largest groups
+group_coverage <- map(py$data, calc_groups_coverage, maxgroups=10)
+```
+
+The labels of the dataset can already help us reduce the dimensions of the dataset.
+While we present the labels below think about variables that
+  
+  - were measured and represented in numerical values
+    * alteratively categorical values or labels
+  - represent unique measurements
+  - can be used to predict water pump need of repair
+  
+The **numerical labels** are as follows, sorted by the number of unique values,
+
+
+```{r Table including numgroups}
+datatable(feature_desc %>% 
+  filter(type == "numeric") %>% 
+  arrange(unique))
+```
+
+
+
+
+
+```{r fig.height=8, include=FALSE}
+plotly::ggplotly(
+  feature_desc %>%
+    filter(type == "numeric") %>%
+    arrange(unique) %>%
+    mutate(Feature = factor(Feature, levels = as.character(Feature))) %>%
+    ggplot(aes(x = Feature, y = unique, label = unique, fill = unique)) + 
+    geom_bar(stat="identity") +
+    geom_text(nudge_y = 1000) +
+    coord_flip() + 
+    ggtitle("Unique values of numerical features") +
+    theme_fivethirtyeight()
+)
+```
+
+```{r Distribution of wpt_name}
+# length(unique(df$wpt_name))
+```
+
+```{r Describe columns}
+add_na_col <- function(x){
+  mutate(x, na = 0)
+}
+
+has_n_col <- function(x, n = 6){
+  return(ncol(x) == n)
+}
+
+summarise_char <- function(x) {
+  list(n_unique = length(unique(x)),
+       n_empty = length(x == "" | is.na(x)))
+}
+```
+
+
+
+#### Days between observations
+
+
+
+```{r Show days between obs}
+yearly_days_between_obs
+```
+
+```{r}
+# Daily counts of water pump status groups
+plotly::ggplotly(
+  df_dates %>% filter(year_recorded > 2004) %>%
+    group_by(year_recorded, month_recorded, status_group) %>%
+    # summarise(count = n()) %>%
+    ggplot(aes(x = month_recorded, fill = status_group)) +
+      geom_bar(position = "stack") + facet_grid(year_recorded~.)
+)
+
+df_dates %>%
+  ungroup() %>%
+  arrange(date_recorded) %>%
+  group_by(date_recorded) %>%
+  summarise("total" = n()) %>%
+  mutate(cumsum = cumsum(total)) %>%
+ggplot(aes(x = date_recorded, y = cumsum)) + geom_line()
+  
+```
+
+```{r Visualize timing of observations}
+df_dates[-1,] %>%
+  filter(year_recorded > 2004) %>%
+  ggplot(aes(x = days_diff)) + geom_histogram(position="dodge", alpha = 0.5, bins = 1000)
+```
+
+In our case we will treat the data as a timeseries, so it is important for us to know
+the timeperiod that is covered and the frequency of measurements. Let's start with
+the number of observations per year,
+
+```{r Ratio of observations per year}
+# Barplot of number of observations per year
+df_dates %>% 
+  group_by(year_recorded) %>%
+  summarise(observations = n()) %>%
+  ggplot(aes(x = year_recorded, y = observations, fill = year_recorded)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label=observations), position=position_dodge(width=0.9), vjust=-0.25) +
+  ggtitle("Aantal observaties per jaar") +
+  theme_fivethirtyeight()
+```
+
+As we can see, the data is measured between 2002 and 2013, but there is only a 
+single observation in 2002 and 30 measurements in 2004. There is a massive gap
+where no measurements were taken between 2004 and 2011. 
+
+Measurements in 2002 and 2004 are scarce and we can motivate the preference to remove
+these observations from our analysis, at least temporarily. 
+The data from the past needs to generalize well to unseen future observations in order for our
+predictive model to work well. Because of the importance of the ability to generalize past data to future scenarios we will
+filter out the data from 2002 and 2004, making the assumption that these measurements will not generalize
+well to the rest of the dataset. Later in the analysis we will test this assumption in more detail.
+
+### Labels
+
+```{r Distribution of labels}
+py$labels %>% 
+  ggplot(aes(x = status_group, fill = status_group)) + 
+  geom_bar() + 
+  ggtitle("Verdeling van water pomp labels") +
+  theme_fivethirtyeight()
+```
+
+```{r Table of tables}
+label_ratios = table(py$labels$status_group) / nrow(py$labels)
+label_ratios
+```
+
+Notice that the dataset is heavily skewed, only `r round(label_ratios[2], 2)`% of the
+labels is *`r names(label_ratios)[2]`*. We have to take this into account when doing predictive classification modelling as
+this introduces a huge bias!
+
+Just by predicting that the functional state of a given water pump is *`r names(label_ratios)[1]`* gives us
+a `r round(label_ratios[1], 2)`% accuracy.
+
+
+
+Now, these ratios are far from constant over time but there does not appear to be a clear independent pattern over time
+We have to keep in mind that the dataset has some very large gaps, seen from the gaps in the plot below.
+
+```{r weekly ratio of status}
+df_dates %>%
+  filter(year_recorded > 2004) %>%
+  mutate(status_group = factor(status_group)) %>%
+  group_by(year_recorded, week_recorded, status_group) %>%
+  summarise(n = n()) %>%
+  complete(status_group) %>%
+  mutate(daily_ratio = ifelse(is.na(n), 0, n) / sum(n, na.rm = T)) %>%
+  ggplot(aes(x = week_recorded, y = daily_ratio, fill = status_group, color = status_group)) +
+    geom_bar(stat = "identity", alpha=0.7) + 
+    geom_smooth() + 
+    ylim(c(0, 1)) +
+    facet_grid(.~year_recorded) +
+    ggtitle("Ratios van pomp status per week")
+    theme_fivethirtyeight()
+```
+
+
+### Numerical values
+
+Of the 40 features of the water pump data, we have 10 numerical values. From these numerical values
+we can at least exclude the `id`.
+
+```{r}
+# Summarise numerical values
+py$data %>% 
+  select(-id) %>%
+  select_if(is.numeric)  %>%
+  map(~as.tibble(c(
+    summary(.x),                        # compute tidy summary of each var
+    list(nonzero = sum(.x != 0),        # Add number of nonzero values
+         unique = length(unique(.x)))      # Add number of unique values
+    ))) %>%  
+  do.call(rbind, .) -> df_num_summary  # bind list elements into df
+```
+
+```{r, results='asis'}
+cat(paste0(c("Numerical measured features",
+           rownames(df_num_summary)),
+           collapse = "\n\t- ")
+    )
+```
+
+A quick summary of these values can tell us more about the structure of the data.
+The first thing we'll notice is that there are no `NA` values in the data, a very
+pleasant surprise! 
+
+
+
+```{r}
+datatable(df_num_summary)
+```
+
+# Summarise non-numerical values like categories and strings
+
+The water pump data is surprising in that it is not really a timeseries that you would
+normally see in similar cases where the objective is to predict system failure using
+sensor data over time. In the data we'll find a feature named `wpt_name`, short for waterpoint name, a name
+that is intuitively unique for every water pump. However... When we look at the non-numerical
+variables we see that many of the labels have a large number of unique values, as expected, but these also include `wpt_name`! 

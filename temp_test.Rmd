@@ -1,0 +1,72 @@
+---
+title: "Data exploration"
+author: "Lodewic van Twillert"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    fig_caption: yes
+    theme: cerulean
+    code_folding: show
+params:
+  echo:
+    value: FALSE
+    input: checkbox
+  project.name: 
+    label: "Short name used for this project"
+    value: Exploratory analysis
+    input: character
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+# knitr::knit_engines$set(python = reticulate::eng_python)
+
+### NOTE ABOUT RETICULATE WITH CONDA ENVIRONMENTS ####
+# You can NOT use non-activated environments with use_condaenv()!
+#   Issue here https://github.com/rstudio/reticulate/issues/292 still open
+# This means you need to start rstudio from within an activated environment
+# i.e. on Unix
+#   source activate vantage-project
+#   rstudio vantage-project.Proj
+# On windows CMD (not powershell)
+#   conda env create -f environment.yml
+#   activate vantage-project
+#   "C:\Program Files\RStudio\bin\rstudio.exe"
+# This will start RStudio using the Conda environment so that you can use the 
+# activated environment and the related Python version / packages
+library(reticulate)
+# use_python('D:/Anaconda/envs/vantage-project/python.exe')
+```
+
+```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
+# Load libraries
+library(tidyverse)
+library(broom)
+# library(ggthemes)
+library(DT)
+py_run_string("import dill")
+```
+
+```{r Python packages}
+# There are some issues with reticulate which causes R to crash when using
+# python chunks in Rmarkdown with python from a conda environment
+#   Might not be the case on Ubuntu / AWS servers but for now we use a workaround
+#   with py_run_string()
+
+py_run_string("
+import dill
+import sklearn as sk
+import numpy as np
+
+training_values = pd.read_csv('https://s3.amazonaws.com/drivendata/data/7/public/4910797b-ee55-40a7-8668-10efd5c1b960.csv', encoding = 'iso-8859-1')
+training_lables = pd.read_csv('https://s3.amazonaws.com/drivendata/data/7/public/0bf8bc6e-30d0-4c50-956a-603fc693d966.csv', encoding = 'iso-8859-1')
+")
+```
+
+```{r}
+py$a
+# py$b
+```
