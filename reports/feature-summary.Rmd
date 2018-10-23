@@ -1,0 +1,131 @@
+---
+title: "Feature summary"
+author: "Lodewic van Twillert"
+date: "10/23/2018"
+output: html_document
+params:
+  year: 2018
+  region: Europe
+  printcode: TRUE
+  data: ../data/raw/water_pump_set.csv
+  description: ../data/raw/water_pump_features.csv
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Function to determine groups to reach cover percentile of data}
+calc_groups_percentile <- function(x, p=0.8) {
+  if ((length(unique(x)) / length(x)) > 1-p) return(unique(x))
+  group_counts <- table(x) / length(x)
+  
+  print(x[1])
+  
+  # Number of groups needed to cover given quantile
+  group_cumsum <- cumsum(sort(group_counts, decreasing = T))
+  num_groups <- which(group_cumsum >= p)[1]
+  return(num_groups)
+  
+}
+
+calc_groups_coverage <- function(x, maxgroups = 10) {
+  if (class(x) == "list") x <- unlist(x)
+  if (class(x) != "numeric") x <- as.character(x)
+  # print(class(x))
+  # print(length(unique(x)))
+  
+  if (maxgroups >= length(unique(x))) return(1)
+  # else...
+  ratios = cumsum(sort(table(x))[1:maxgroups]) / length(x)
+  return(ratios[1:maxgroups])
+
+}
+```
+
+### Summary of features
+
+```{r Read and describe data}
+df <- read.csv(params$data)
+description <- read.csv(params$description)
+
+feature_desc <- description %>%
+  mutate(example = as.character(df[1, -1]), # First row of the data without the 'id' column
+         unique = map_int(df[,-1],function(x) length(unique(x))),
+         type = map_chr(df[,-1], function(x) ifelse(is.numeric(x), "numeric", "character")))
+```
+
+```{r Table of feature classes}
+feature_desc
+```
+
+The basic steps of this project are to understand the available features and think about which of these we will have to include, exclude or transform before setting up a predictive model. 
+
+```{r Add additional info to feature description}
+# Number of existing groups required to cover at least 80% of the data
+# group_req <- map(py$data, calc_groups_percentile, p=0.8)
+# Coverage of data using only the largest groups
+group_coverage <- map(py$data, calc_groups_coverage, maxgroups=10)
+df_group_coverage <- data.frame(group_coverage)
+```
+
+The feature names by themselves can already help us reduce the dimensions of the dataset, although this is a
+manual job that relies on our personal understanding and intuition about the data.
+
+While we present the labels below think about variables that
+  
+  - were measured and represented in numerical values
+    * alteratively categorical values or labels
+  - represent unique measurements
+  - can be used to predict water pump need of repair
+  - can be combined into a new information-rich variable
+  
+The **numerical labels** are as follows, sorted by the number of unique values,
+
+```{r Table including numgroups}
+datatable(feature_desc %>% 
+  filter(type == "numeric") %>% 
+  arrange(unique))
+```
+
+```{r fig.height=8, include=FALSE}
+plotly::ggplotly(
+  feature_desc %>%
+    filter(type == "numeric") %>%
+    arrange(unique) %>%
+    mutate(Feature = factor(Feature, levels = as.character(Feature))) %>%
+    ggplot(aes(x = Feature, y = unique, label = unique, fill = unique)) + 
+    geom_bar(stat="identity") +
+    geom_text(nudge_y = 1000) +
+    coord_flip() + 
+    ggtitle("Unique values of numerical features") +
+    theme_fivethirtyeight()
+)
+```
+
+```{r Distribution of wpt_name}
+# length(unique(df$wpt_name))
+```
+
+```{r Describe columns}
+add_na_col <- function(x){
+  mutate(x, na = 0)
+}
+
+has_n_col <- function(x, n = 6){
+  return(ncol(x) == n)
+}
+
+summarise_char <- function(x) {
+  list(n_unique = length(unique(x)),
+       n_empty = length(x == "" | is.na(x)))
+}
+```
+
+# Summarise non-numerical values like categories and strings
+
+The water pump data is surprising in that it is not really a timeseries that you would
+normally see in similar cases where the objective is to predict system failure using
+sensor data over time. In the data we'll find a feature named `wpt_name`, short for waterpoint name, a name
+that is intuitively unique for every water pump. However... When we look at the non-numerical
+variables we see that many of the labels have a large number of unique values, as expected, but these also include `wpt_name`! 

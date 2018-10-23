@@ -67,7 +67,6 @@ library(leaflet)
 #   with py_run_string()
 
 py_run_string("
-import dill
 import sklearn as sk
 import numpy as np
 import pandas as pd
@@ -145,22 +144,21 @@ for instance the measurement `id` won't be of much use at it is unique.
 First we'll take a look at the raw data to fully understand the structure of our data,
 especially how exactly the data was measured over time. We have `r nrow(py$data)` observations.
 
-### Raw data
+### The raw data
+
+The raw data is not considered big-data in the sense that it will fit on a single machine; we do not have to worry about batch processing because of sheer file size with 'only' `r nrow(py$data)` observations. The number of features is also a mere `r ncol(py$data)`! Enough to make a interpretable predictive model and this will allow us to dive deeper into the
+individual variables.
 
 ```{r}
 ShowDataTable(py$data[1:6,])
 ```
 
 With the data above we will aim to predict the labels, indicating the need of repair
-or rather the functional state of water pumps. There are `r nrow(py$labels)`  possible labels,
+or rather the functional state of water pumps. There are `r length(unique(py$labels[,2]))`  possible labels,
 
 `r for (lab in unique(py$labels[,2])) cat(paste0("\t- ", lab, "(", round(sum(py$labels[,2] == lab) / nrow(py$labels), 2), "%)\n"))`
 
-Each of these labels is associated with a unique measurement `id`.
-
-```{r}
-head(py$labels)
-```
+Each of these labels is associated with a unique measurement `id` that we can match to a single observation.
 
 ### Features
 
@@ -181,19 +179,18 @@ calc_groups_percentile <- function(x, p=0.8) {
 calc_groups_coverage <- function(x, maxgroups = 10) {
   if (class(x) == "list") x <- unlist(x)
   if (class(x) != "numeric") x <- as.character(x)
-  print(class(x))
-  print(length(unique(x)))
+  # print(class(x))
+  # print(length(unique(x)))
   
   if (maxgroups >= length(unique(x))) return(1)
   # else...
-  ratios = sort(table(x))[1:maxgroups] / length(x)
-  return(sum(ratios, na.rm=T))
+  ratios = cumsum(sort(table(x))[1:maxgroups]) / length(x)
+  return(ratios[1:maxgroups])
 
 }
 ```
 
-The most important part of this project is, of course, the data. The data consists of
-measured variables that we can use to predict the status of a given water pump. 
+The basic steps of this project are to understand the available features and think about which of these we will have to include, exclude or transform before setting up a predictive model. 
 
 ```{r Add additional info to feature description}
 feature_desc <- py$features %>%
@@ -202,31 +199,30 @@ feature_desc <- py$features %>%
          type = map_chr(py$data[,-1], function(x) ifelse(is.numeric(x), "numeric", "character")))
 
 # Number of existing groups required to cover at least 80% of the data
-group_req <- map(py$data, calc_groups_percentile, p=0.8)
+# group_req <- map(py$data, calc_groups_percentile, p=0.8)
 # Coverage of data using only the largest groups
 group_coverage <- map(py$data, calc_groups_coverage, maxgroups=10)
+df_group_coverage <- data.frame(group_coverage)
 ```
 
-The labels of the dataset can already help us reduce the dimensions of the dataset.
+The feature names by themselves can already help us reduce the dimensions of the dataset, although this is a
+manual job that relies on our personal understanding and intuition about the data.
+
 While we present the labels below think about variables that
   
   - were measured and represented in numerical values
     * alteratively categorical values or labels
   - represent unique measurements
   - can be used to predict water pump need of repair
+  - can be combined into a new information-rich variable
   
 The **numerical labels** are as follows, sorted by the number of unique values,
-
 
 ```{r Table including numgroups}
 datatable(feature_desc %>% 
   filter(type == "numeric") %>% 
   arrange(unique))
 ```
-
-
-
-
 
 ```{r fig.height=8, include=FALSE}
 plotly::ggplotly(
@@ -262,11 +258,16 @@ summarise_char <- function(x) {
 }
 ```
 
+# Summarise non-numerical values like categories and strings
+
+The water pump data is surprising in that it is not really a timeseries that you would
+normally see in similar cases where the objective is to predict system failure using
+sensor data over time. In the data we'll find a feature named `wpt_name`, short for waterpoint name, a name
+that is intuitively unique for every water pump. However... When we look at the non-numerical
+variables we see that many of the labels have a large number of unique values, as expected, but these also include `wpt_name`! 
 
 
 #### Days between observations
-
-
 
 ```{r Show days between obs}
 yearly_days_between_obs

@@ -1,0 +1,67 @@
+---
+title: "todo"
+author: "Lodewic van Twillert"
+date: "10/23/2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read the data using python
+Summarise and visualize some basics about the data with Rmarkdown
+  input: 
+    data/raw/water_pumps_set.csv
+    data/raw/water_pumps_labels.csv
+  output :
+    data/interim/water_pumps_set_numeric.csv
+    data/interim/water_pumps_set_nonnumeric.csv
+    reports/data-intro.html
+
+rule summarize_numeric:
+  # Summary of numeric values
+   output :
+    data/interim/water_pumps_set_numeric.csv
+    data/interim/water_pumps_set_nonnumeric.csv
+   output :
+    data/interim/water_pumps_set_numeric_summary.csv
+    data/interim/water_pumps_set_nonnumeric_summary.csv
+    reports/data-summary.html
+
+Subset columns of the data using python based on our findings with Rmarkdown
+Clean and transform the data using python
+  input: 
+    /data/raw/water_pumps_sets.csv
+    data/raw/water_pumps_labels.csv
+  output :
+    /data/processed/water_pumps_sets__cleaned.csv
+    data/processed/water_pumps_labels_cleaned.csv
+    /reports/data-cleaning.csv
+    
+Filter the data by various criteria on the remaining columns of the data using Python
+  Input: 
+    /data/processed/water_pumps_sets_cleaned.csv
+    data/processed/water_pumps_labels_cleaned.csv
+  Output :
+    /data/processed/water_pumps_sets_cleaned_filtered.csv
+    data/processed/water_pumps_labels_cleaned_filtered.csv
+    /reports/data-filter.csv    
+
+Describe cleaning process and visualize transformations using Rmarkdown
+
+Split data into training and test data in python
+Describe modelling problem in detail using Rmarkdown
+
+Build various models using python
+Fit them in turn
+
+Compare output in Rmarkdown
+
+Neural network using Keras?
+
+
+
+
