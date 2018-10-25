@@ -25,6 +25,20 @@ One should be up and running as follows:
     source activate vantage-project
     make requirements
     
+To then create processed data and run all rules in the Makefile, activate your environment
+and then call
+
+    make all
+
+This will,
+
+  - check your conda environment
+  - get the data from S3 server
+  - clean the data and encode the data for model training
+  - Create a report website under `reports/Report_site/index.html' with some exploratory analysis
+    * Really this was more of a proof of concept.
+  - ... then that's it for now.
+    
 The data for this project was already hosted on Amazon S3, to sync this data use
 
     make sync_data_from_s3
