@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Lodewic van Twillert" />
+
+
+<title>Data exploration</title>
+
+<script src="site_libs/jquery-1.12.4/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cerulean.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.2/htmlwidgets.js"></script>
+<link href="site_libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="site_libs/datatables-binding-0.4/datatables.js"></script>
+<link href="site_libs/dt-core-1.10.16/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="site_libs/dt-core-1.10.16/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="site_libs/dt-core-1.10.16/js/jquery.dataTables.min.js"></script>
+<link href="site_libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Lodewic - Water pomp onderhoud</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="data-exploration.html">Data exploration</a>
+</li>
+<li>
+  <a href="data-exploration-features.html">Feature exploration</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Data exploration</h1>
+<h4 class="author"><em>Lodewic van Twillert</em></h4>
+<h4 class="date"><em>25 October, 2018</em></h4>
+
+</div>
+
+
+<pre class="r"><code># PYTHON
+
+# There are some issues with reticulate which causes R to crash when using
+# python chunks in Rmarkdown with python from a conda environment
+#   Might not be the case on Ubuntu / AWS servers but for now we use a workaround
+#   with py_run_string()
+
+py_run_string(&quot;
+import sklearn as sk
+import numpy as np
+import pandas as pd
+&quot;)</code></pre>
+<pre class="r"><code>data &lt;- read.csv(&quot;../data/raw/water_pump_set.csv&quot;)
+labels &lt;- read.csv(&quot;../data/raw/water_pump_labels.csv&quot;)
+features &lt;- read.csv(&quot;../data/raw/water_pump_features.csv&quot;)
+df &lt;- merge(data, labels, by=&quot;id&quot;)</code></pre>
+<div id="getting-a-feeling-for-the-data" class="section level1">
+<h1>Getting a feeling for the data</h1>
+<p>Before we start modelling the data we should understand the data. In this dataset we find a total of 40 measured variables to be used as features in our models. In this section we will aim to understand these features and make motivated choices to keep, remove or transform these features from our prediction model.</p>
+<div id="a-closer-look-at-our-features" class="section level2">
+<h2>A closer look at our features</h2>
+<p>Our data consists of, - 59400 observations - 40 features - 3 types of labels to predict</p>
+<p>Not all of the features are necessarily useful for predicting the moment of failure of water pumps, for instance the measurement <code>id</code> won’t be of much use at it is unique.</p>
+<p>First we’ll take a look at the raw data to fully understand the structure of our data, especially how exactly the data was measured over time. We have 59400 observations.</p>
+<div id="the-raw-data" class="section level3">
+<h3>The raw data</h3>
+<p>The raw data is not considered big-data in the sense that it will fit on a single machine; we do not have to worry about batch processing because of sheer file size with ‘only’ 59400 observations. The number of features is also a mere 41! Enough to make a interpretable predictive model and this will allow us to dive deeper into the individual variables.</p>
+<pre class="r"><code>head(df, n=10) %&gt;% ShowDataTable()</code></pre>
+<div id="htmlwidget-c09876c6fa6c6ebb8efd" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-c09876c6fa6c6ebb8efd">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],[0,1,2,3,4,5,6,7,8,9],[0,0,0,10,0,50,0,0,0,0],["2012-11-13","2011-03-05","2011-03-27","2013-06-03","2011-03-22","2011-02-26","2012-10-20","2011-03-23","2011-04-07","2011-07-12"],["Tasaf","Shipo","Lvia","Germany Republi","Cmsr","Private","Government Of Tanzania","Water","Water","Ded"],[0,1978,0,1639,0,28,0,0,0,0],["TASAF","SHIPO","LVIA","CES","CMSR","Private","Government","Gover","Commu","DED"],[33.1258283,34.77071669,36.11505595,37.14743219,36.16489341,39.28612441,33.2298797,36.31361889,35.93944483,31.69337116],[-5.11815407,-9.39564152,-6.27926803,-3.18755455,-6.09928949,-6.97240273,-3.85298271,-6.71925716,-6.0143582,-2.53070326],["Mratibu","none","Bombani","Area 7 Namba 5","Ezeleda","Kwa Namaj","Mission","Itawi","Kwa Chiswagala","Shule Ya Msingi Nyamirembe A"],[0,0,0,0,0,0,0,0,0,0],["Lake Tanganyika","Rufiji","Wami / Ruvu","Pangani","Wami / Ruvu","Wami / Ruvu","Internal","Rufiji","Wami / Ruvu","Lake Victoria"],["Majengo","Magoda C","Songambele","Urereni","Maata A","Mwandege","Ngaganulwa","Mwangaza","Mazengo","Miembeni"],["Tabora","Iringa","Dodoma","Kilimanjaro","Dodoma","Pwani","Shinyanga","Dodoma","Dodoma","Kagera"],[14,11,1,3,1,60,17,1,1,18],[3,4,4,5,4,43,3,1,5,8],["Uyui","Njombe","Chamwino","Hai","Chamwino","Mkuranga","Shinyanga Rural","Mpwapwa","Dodoma Urban","Chato"],["Igalula","Uwemba","Msamalo","Masama Magharibi","Majeleko","Vikindu","Usanda","Wotta","Ipala","Nyamirembe"],[0,20,0,25,0,6922,0,0,0,0],["","True","True","True","True","True","True","True","True","True"],["GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd","GeoData Consultants Ltd"],["VWC","","VWC","Water Board","VWC","Private operator","VWC","VWC","VWC","VWC"],["","","Mgun","Losaa-Kia water supply","","","","Lwih","Ipal","Mapinduzi"],["True","False","True","True","True","False","True","True","False","True"],[0,2008,0,1999,0,0,0,0,0,0],["afridev","other - rope pump","mono","gravity","nira/tanira","submersible","other","other","mono","mono"],["afridev","rope pump","mono","gravity","nira/tanira","submersible","other","other","mono","mono"],["handpump","rope pump","motorpump","gravity","handpump","submersible","other","other","motorpump","motorpump"],["vwc","vwc","vwc","water board","vwc","private operator","vwc","vwc","private operator","vwc"],["user-group","user-group","user-group","user-group","user-group","commercial","user-group","user-group","commercial","user-group"],["unknown","never pay","pay per bucket","pay per bucket","unknown","pay per bucket","never pay","never pay","pay per bucket","never pay"],["unknown","never pay","per bucket","per bucket","unknown","per bucket","never pay","never pay","per bucket","never pay"],["milky","soft","soft","soft","soft","soft","soft","milky","soft","soft"],["milky","good","good","good","good","good","good","milky","good","good"],["enough","enough","insufficient","enough","dry","enough","seasonal","insufficient","dry","insufficient"],["enough","enough","insufficient","enough","dry","enough","seasonal","insufficient","dry","insufficient"],["shallow well","shallow well","machine dbh","spring","shallow well","machine dbh","shallow well","spring","machine dbh","machine dbh"],["shallow well","shallow well","borehole","spring","shallow well","borehole","shallow well","spring","borehole","borehole"],["groundwater","groundwater","groundwater","groundwater","groundwater","groundwater","groundwater","groundwater","groundwater","groundwater"],["hand pump","hand pump","communal standpipe multiple","communal standpipe","hand pump","communal standpipe multiple","other","improved spring","communal standpipe multiple","communal standpipe multiple"],["hand pump","hand pump","communal standpipe","communal standpipe","hand pump","communal standpipe","other","improved spring","communal standpipe","communal standpipe"],["non functional","functional","functional","functional","non functional","functional","non functional","functional","non functional","non functional"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>id<\/th>\n      <th>amount_tsh<\/th>\n      <th>date_recorded<\/th>\n      <th>funder<\/th>\n      <th>gps_height<\/th>\n      <th>installer<\/th>\n      <th>longitude<\/th>\n      <th>latitude<\/th>\n      <th>wpt_name<\/th>\n      <th>num_private<\/th>\n      <th>basin<\/th>\n      <th>subvillage<\/th>\n      <th>region<\/th>\n      <th>region_code<\/th>\n      <th>district_code<\/th>\n      <th>lga<\/th>\n      <th>ward<\/th>\n      <th>population<\/th>\n      <th>public_meeting<\/th>\n      <th>recorded_by<\/th>\n      <th>scheme_management<\/th>\n      <th>scheme_name<\/th>\n      <th>permit<\/th>\n      <th>construction_year<\/th>\n      <th>extraction_type<\/th>\n      <th>extraction_type_group<\/th>\n      <th>extraction_type_class<\/th>\n      <th>management<\/th>\n      <th>management_group<\/th>\n      <th>payment<\/th>\n      <th>payment_type<\/th>\n      <th>water_quality<\/th>\n      <th>quality_group<\/th>\n      <th>quantity<\/th>\n      <th>quantity_group<\/th>\n      <th>source<\/th>\n      <th>source_type<\/th>\n      <th>source_class<\/th>\n      <th>waterpoint_type<\/th>\n      <th>waterpoint_type_group<\/th>\n      <th>status_group<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"scrollX":true,"paging":false,"columnDefs":[{"className":"dt-right","targets":[1,2,5,7,8,10,14,15,18,24]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<p>With the data above we will aim to predict the labels, indicating the need of repair or rather the functional state of water pumps. There are 3 possible labels,</p>
+<p>Each of these labels is associated with a unique measurement <code>id</code> that we can match to a single observation.</p>
+</div>
+<div id="the-labels" class="section level3">
+<h3>The labels</h3>
+<p>The label distribution is heavily skewed, the ‘functional needs repair’ group is severely under represented.</p>
+<pre class="r"><code>df %&gt;% ggplot(aes(x = status_group, fill = status_group)) + geom_bar() +
+  ggtitle(&quot;Distribution of maintenance labels&quot;) +
+  geom_bar() +
+  theme_fivethirtyeight() </code></pre>
+<p><img src="data-exploration_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+</div>
+<div id="the-surprise" class="section level3">
+<h3>The surprise</h3>
+<p>The water pump data is surprising in that it is not really a timeseries that you would normally see in similar cases where the objective is to predict system failure using sensor data over time. In the data we’ll find a feature named <code>wpt_name</code>, short for waterpoint name, a name that is intuitively unique for every water pump. However… When we look at the non-numerical variables we see that many of the labels have a large number of unique values, as expected, but these also include <code>wpt_name</code>!</p>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

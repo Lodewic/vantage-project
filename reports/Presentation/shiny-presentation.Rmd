@@ -1,0 +1,79 @@
+---
+title: "Tanzania water pump maintenance"
+author: Lodewic van Twillert
+date: March 22, 2005
+output: 
+  revealjs::revealjs_presentation:
+    theme: league
+    transition: slide
+---
+
+```{r load libraries}
+# Load libraries
+library(tidyverse)
+library(broom)
+library(ggthemes)
+library(DT)
+library(leaflet)
+# Python setup
+knitr::knit_engines$set(python = reticulate::eng_python) # Not needed with knitr version > 1.18
+library(reticulate)
+```
+
+```{r Python packages}
+# PYTHON
+
+# There are some issues with reticulate which causes R to crash when using
+# python chunks in Rmarkdown with python from a conda environment
+#   Might not be the case on Ubuntu / AWS servers but for now we use a workaround
+#   with py_run_string()
+
+py_run_string("
+import sklearn as sk
+import numpy as np
+import pandas as pd
+")
+```
+
+```{r Python read data}
+# Python code
+
+# Read data from s3 amazon instance
+py_run_string("
+data = pd.read_csv('https://s3.amazonaws.com/drivendata/data/7/public/4910797b-ee55-40a7-8668-10efd5c1b960.csv', encoding = 'iso-8859-1')
+labels = pd.read_csv('https://s3.amazonaws.com/drivendata/data/7/public/0bf8bc6e-30d0-4c50-956a-603fc693d966.csv', encoding = 'iso-8859-1')
+
+# A .docx was provided with feature descriptions. This was formatted as a csv file.
+features = pd.read_csv('../../data/raw/water_pump_features.csv')
+")
+```
+
+# The data
+
+- Case about water pumps in Tanzania 
+
+- The data set originates from the Tanzanian Ministry of Water. Currently, this ministry maintains its pumps based on a maintenance schedule or, of course, when they break down. We feel that the maintenance of the Tanzanian water pumps could improve in both the cost of maintenance and the prevention of break downs by introducing machine learning to predict if a water pump is in need of repair or even the moment of failure of each water pump. 
+
+## Objective
+
+Our objective is to develop a reproducible model that can predict which pumps will fail in the future, either the moment or just whether they fail. The resulting model is to be used by the Tanzanian government to effectively maintain their water pumps.
+
+Normally for this type of data you would expect that a single water pump was measured
+over-time and using this data we could predict the need for repairs for a given pump. In this case however, at 
+every practically every timepoint a different water point was measured! So we have to make some assumptions about the
+data and the approach to how we create a model.
+
+## Assumptions
+
+**We should know in advance which water point should be predicted**, there must be something like a 
+maintenance schedule at least 3 days ahead. We make this assumption because we have to able to take
+into account the measured variables about the water pumps.!
+
+**Measured variable should all be assumed to be known in advance**, otherwise we should choose
+to leave out some variables that may have only become known at the time of determining the functioning of a water pump.
+Variables like the `funder` and `district_code` are clearly known ahead of maintenance, but other variables like 
+`water_quality` and `amount_tsh` (total amount water available to waterpoint) may not be known before determining the state of the pump.
+
+Data over time of invidual water pumps
+
+## TODO MORE SLIDES

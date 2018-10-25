@@ -3,61 +3,19 @@ vantage-project
 
 A data science case for Vantage AI
 
-Project Organization
-------------
+<p><small>Project based on the <a target="_blank" href="https://github.com/BigDataRepublic/cookiecutter-data-science">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── environment.yml    <- The conda environment file to reproduce the analysis environment. eg.
-    │                         `conda env create -f environment.yml`
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── githubrequirements.txt <- Pip references to github repo's, referred to by both `environment.yml` and `requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so vantage can be imported
-    ├── vantage                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes vantage a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.testrun.org
+Note: This data science project is unfinished so the predictive modelling and 
+classification steps are left out. These scripts' results were not satisfying nor
+documented.
 
+Presented here are the steps that WERE made. This includes,
 
---------
+  - Conda environment setup
+  - Use of Makefile to run parts of the analysis
+  - Creation of report website using R
+    * Excluding modelling results as these were unfinished
+    * Modelling scripts would take too much time to streamline
 
 ## Getting started:
 
@@ -66,26 +24,45 @@ One should be up and running as follows:
     make create_environment
     source activate vantage-project
     make requirements
-
-If you've setup s3, one can sync to and from your bucket as follows:
+    
+The data for this project was already hosted on Amazon S3, to sync this data use
 
     make sync_data_from_s3
-    make sync_data_to_s3
+    
+Note: you may have to create the `data/` repositories first, you need
 
-Running the data preparation should then be as follows:
+  - data/raw
+  - data/interim
+  - data/external
+  - data/processed
 
-    make data
-
-### Shortcut creating the environment using conda 
-To get started in this project, you first need to setup an environment:
-
-    conda env create -f environment.yml
-
-### Installing Python module as egg
-------------
-If you want to reuse the code developed in other projects, you can install an egg directly from your checkout:
-
-    pip install -e .
+To run the computational data transformation steps:
+    
+    make finaldataset
 
 
-<p><small>Project based on the <a target="_blank" href="https://github.com/BigDataRepublic/cookiecutter-data-science">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+This will only create a cleaned up subset of the data and an encoded version of the data to use
+in Python for classification modelling using one-hot encoding of included categorical data.
+
+To create a small report 'website', run:
+  
+    make report
+    
+The output can be found under `reports/Report_site/index.html!
+This is created using Rmarkdown and the `rmarkdown::render_site()` function.
+You can use this, instead of jupyter notebooks, to do your data analysis and exploratory analysis
+in multiple Rmarkdown files and then knit them together as a website. I think a website output for
+larger analyses is well-suited if there are many technical steps that may not be relevant to every reader.
+
+
+Tanzania water pump maintenance prediction
+==============================
+
+In this repository you can find notebooks under `/notebooks/dev'.
+These show some exploratory analysis using Jupyter notebooks.
+
+Sadly, scripts are scattered and older scripts were removed prior to pushing this last version.
+
+A more detailed description of this repository may follow.
+

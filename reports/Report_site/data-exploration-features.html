@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Lodewic van Twillert" />
+
+<meta name="date" content="2018-10-24" />
+
+<title>Grouped-variables</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cerulean.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Lodewic - Water pomp onderhoud</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="data-exploration.html">Data exploration</a>
+</li>
+<li>
+  <a href="data-exploration-features.html">Feature exploration</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Grouped-variables</h1>
+<h4 class="author"><em>Lodewic van Twillert</em></h4>
+<h4 class="date"><em>10/24/2018</em></h4>
+
+</div>
+
+
+<pre><code>## -- Attaching packages ---------------------------------- tidyverse 1.2.1 --</code></pre>
+<pre><code>## v ggplot2 3.0.0     v purrr   0.2.5
+## v tibble  1.4.2     v dplyr   0.7.6
+## v tidyr   0.8.1     v stringr 1.3.1
+## v readr   1.1.1     v forcats 0.3.0</code></pre>
+<pre><code>## -- Conflicts ------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<div id="features" class="section level2">
+<h2>Features</h2>
+<p>Each waterpump is described by 39 features and a unique id. The basic steps of this project are to understand the available features and think about which of these we will have to include, exclude or transform before setting up a predictive model.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Feature</th>
+<th align="left">Description</th>
+<th align="left">example</th>
+<th align="right">unique</th>
+<th align="left">type</th>
+<th align="right">nonzero</th>
+<th align="right">max_single</th>
+<th align="left">max_occurence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">amount_tsh</td>
+<td align="left">Total static head (amount water available to waterpoint)</td>
+<td align="left">6000</td>
+<td align="right">98</td>
+<td align="left">numeric</td>
+<td align="right">17761</td>
+<td align="right">41639</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">gps_height</td>
+<td align="left">Altitude of the well</td>
+<td align="left">1390</td>
+<td align="right">2428</td>
+<td align="left">integer</td>
+<td align="right">38962</td>
+<td align="right">20438</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">longitude</td>
+<td align="left">GPS coordinate</td>
+<td align="left">34.93809275</td>
+<td align="right">57516</td>
+<td align="left">numeric</td>
+<td align="right">57588</td>
+<td align="right">1812</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">latitude</td>
+<td align="left">GPS coordinate</td>
+<td align="left">-9.85632177</td>
+<td align="right">57517</td>
+<td align="left">numeric</td>
+<td align="right">59400</td>
+<td align="right">1812</td>
+<td align="left">-2e-08</td>
+</tr>
+<tr class="odd">
+<td align="left">num_private</td>
+<td align="left"></td>
+<td align="left">0</td>
+<td align="right">65</td>
+<td align="left">integer</td>
+<td align="right">757</td>
+<td align="right">58643</td>
+<td align="left">0</td>
+</tr>
+<tr class="even">
+<td align="left">region_code</td>
+<td align="left">Geographic location (coded)</td>
+<td align="left">11</td>
+<td align="right">27</td>
+<td align="left">integer</td>
+<td align="right">59400</td>
+<td align="right">5300</td>
+<td align="left">11</td>
+</tr>
+<tr class="odd">
+<td align="left">district_code</td>
+<td align="left">Geographic location (coded)</td>
+<td align="left">5</td>
+<td align="right">20</td>
+<td align="left">integer</td>
+<td align="right">59377</td>
+<td align="right">12203</td>
+<td align="left">1</td>
+</tr>
+<tr class="even">
+<td align="left">population</td>
+<td align="left">Population around the well</td>
+<td align="left">109</td>
+<td align="right">1049</td>
+<td align="left">integer</td>
+<td align="right">38019</td>
+<td align="right">21381</td>
+<td align="left">0</td>
+</tr>
+<tr class="odd">
+<td align="left">construction_year</td>
+<td align="left">Year the waterpoint was constructed</td>
+<td align="left">1999</td>
+<td align="right">55</td>
+<td align="left">integer</td>
+<td align="right">38691</td>
+<td align="right">20709</td>
+<td align="left">0</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Feature</th>
+<th align="left">Description</th>
+<th align="left">example</th>
+<th align="right">unique</th>
+<th align="left">type</th>
+<th align="right">nonzero</th>
+<th align="right">max_single</th>
+<th align="left">max_occurence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">date_recorded</td>
+<td align="left">The date the row was entered</td>
+<td align="left">2011-03-14</td>
+<td align="right">356</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">572</td>
+<td align="left">2011-03-15</td>
+</tr>
+<tr class="even">
+<td align="left">funder</td>
+<td align="left">Who funded the well</td>
+<td align="left">Roman</td>
+<td align="right">1898</td>
+<td align="left">factor</td>
+<td align="right">58623</td>
+<td align="right">9084</td>
+<td align="left">Government Of Tanzania</td>
+</tr>
+<tr class="odd">
+<td align="left">installer</td>
+<td align="left">Organization that installed the well</td>
+<td align="left">Roman</td>
+<td align="right">2146</td>
+<td align="left">factor</td>
+<td align="right">58623</td>
+<td align="right">17402</td>
+<td align="left">DWE</td>
+</tr>
+<tr class="even">
+<td align="left">wpt_name</td>
+<td align="left">Name of the waterpoint if there is one</td>
+<td align="left">none</td>
+<td align="right">37400</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">3563</td>
+<td align="left">none</td>
+</tr>
+<tr class="odd">
+<td align="left">basin</td>
+<td align="left">Geographic water basin</td>
+<td align="left">Lake Nyasa</td>
+<td align="right">9</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">10248</td>
+<td align="left">Lake Victoria</td>
+</tr>
+<tr class="even">
+<td align="left">subvillage</td>
+<td align="left">Geographic location</td>
+<td align="left">Mnyusi B</td>
+<td align="right">19288</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">508</td>
+<td align="left">Madukani</td>
+</tr>
+<tr class="odd">
+<td align="left">region</td>
+<td align="left">Geographic location</td>
+<td align="left">Iringa</td>
+<td align="right">21</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">5294</td>
+<td align="left">Iringa</td>
+</tr>
+<tr class="even">
+<td align="left">lga</td>
+<td align="left">Geographic location</td>
+<td align="left">Ludewa</td>
+<td align="right">125</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">2503</td>
+<td align="left">Njombe</td>
+</tr>
+<tr class="odd">
+<td align="left">ward</td>
+<td align="left">Geographic location</td>
+<td align="left">Mundindi</td>
+<td align="right">2092</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">307</td>
+<td align="left">Igosi</td>
+</tr>
+<tr class="even">
+<td align="left">public_meeting</td>
+<td align="left">True/False</td>
+<td align="left">True</td>
+<td align="right">3</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">51011</td>
+<td align="left">True</td>
+</tr>
+<tr class="odd">
+<td align="left">recorded_by</td>
+<td align="left">Group entering this row of data</td>
+<td align="left">GeoData Consultants Ltd</td>
+<td align="right">1</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">59400</td>
+<td align="left">GeoData Consultants Ltd</td>
+</tr>
+<tr class="even">
+<td align="left">scheme_management</td>
+<td align="left">Who operates the waterpoint</td>
+<td align="left">VWC</td>
+<td align="right">13</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">36793</td>
+<td align="left">VWC</td>
+</tr>
+<tr class="odd">
+<td align="left">scheme_name</td>
+<td align="left">Who operates the waterpoint</td>
+<td align="left">Roman</td>
+<td align="right">2697</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">28166</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">permit</td>
+<td align="left">If the waterpoint is permitted</td>
+<td align="left">False</td>
+<td align="right">3</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">38852</td>
+<td align="left">True</td>
+</tr>
+<tr class="odd">
+<td align="left">extraction_type</td>
+<td align="left">The kind of extraction the waterpoint uses</td>
+<td align="left">gravity</td>
+<td align="right">18</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">26780</td>
+<td align="left">gravity</td>
+</tr>
+<tr class="even">
+<td align="left">extraction_type_group</td>
+<td align="left">The kind of extraction the waterpoint uses</td>
+<td align="left">gravity</td>
+<td align="right">13</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">26780</td>
+<td align="left">gravity</td>
+</tr>
+<tr class="odd">
+<td align="left">extraction_type_class</td>
+<td align="left">The kind of extraction the waterpoint uses</td>
+<td align="left">gravity</td>
+<td align="right">7</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">26780</td>
+<td align="left">gravity</td>
+</tr>
+<tr class="even">
+<td align="left">management</td>
+<td align="left">How the waterpoint is managed</td>
+<td align="left">vwc</td>
+<td align="right">12</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">40507</td>
+<td align="left">vwc</td>
+</tr>
+<tr class="odd">
+<td align="left">management_group</td>
+<td align="left">How the waterpoint is managed</td>
+<td align="left">user-group</td>
+<td align="right">5</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">52490</td>
+<td align="left">user-group</td>
+</tr>
+<tr class="even">
+<td align="left">payment</td>
+<td align="left">What the water costs</td>
+<td align="left">pay annually</td>
+<td align="right">7</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">25348</td>
+<td align="left">never pay</td>
+</tr>
+<tr class="odd">
+<td align="left">payment_type</td>
+<td align="left">What the water costs</td>
+<td align="left">annually</td>
+<td align="right">7</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">25348</td>
+<td align="left">never pay</td>
+</tr>
+<tr class="even">
+<td align="left">water_quality</td>
+<td align="left">The quality of the water</td>
+<td align="left">soft</td>
+<td align="right">8</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">50818</td>
+<td align="left">soft</td>
+</tr>
+<tr class="odd">
+<td align="left">quality_group</td>
+<td align="left">The quality of the water</td>
+<td align="left">good</td>
+<td align="right">6</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">50818</td>
+<td align="left">good</td>
+</tr>
+<tr class="even">
+<td align="left">quantity</td>
+<td align="left">The quantity of water</td>
+<td align="left">enough</td>
+<td align="right">5</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">33186</td>
+<td align="left">enough</td>
+</tr>
+<tr class="odd">
+<td align="left">quantity_group</td>
+<td align="left">The quantity of water</td>
+<td align="left">enough</td>
+<td align="right">5</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">33186</td>
+<td align="left">enough</td>
+</tr>
+<tr class="even">
+<td align="left">source</td>
+<td align="left">The source of the water</td>
+<td align="left">spring</td>
+<td align="right">10</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">17021</td>
+<td align="left">spring</td>
+</tr>
+<tr class="odd">
+<td align="left">source_type</td>
+<td align="left">The source of the water</td>
+<td align="left">spring</td>
+<td align="right">7</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">17021</td>
+<td align="left">spring</td>
+</tr>
+<tr class="even">
+<td align="left">source_class</td>
+<td align="left">The source of the water</td>
+<td align="left">groundwater</td>
+<td align="right">3</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">45794</td>
+<td align="left">groundwater</td>
+</tr>
+<tr class="odd">
+<td align="left">waterpoint_type</td>
+<td align="left">The kind of waterpoint</td>
+<td align="left">communal standpipe</td>
+<td align="right">7</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">28522</td>
+<td align="left">communal standpipe</td>
+</tr>
+<tr class="even">
+<td align="left">waterpoint_type_group</td>
+<td align="left">The kind of waterpoint</td>
+<td align="left">communal standpipe</td>
+<td align="right">6</td>
+<td align="left">factor</td>
+<td align="right">59400</td>
+<td align="right">34625</td>
+<td align="left">communal standpipe</td>
+</tr>
+</tbody>
+</table>
+<div id="interpreting-feature-descriptions" class="section level3">
+<h3>Interpreting feature descriptions</h3>
+<p>The early stages of a data science project mostly test your common sense. In this instance, we need to determine which features need to be looked at further.</p>
+<p>What to look for in the tables above..</p>
+<ul>
+<li>Categorical variables with many unique values</li>
+<li>Continuous variables with a high max_occurence (usually missing values!)</li>
+</ul>
+<p>Also remember that EVERY categorical value with many unique values are problematic for fitting classification models. So in any case we should give these a good look.</p>
+</div>
+</div>
+<div id="handling-feature-groups" class="section level2">
+<h2>Handling feature groups</h2>
+<p>The variables in the data are far from independent, some variables practically mean the same thing. Some feature groups are so painfully obvious that we should clean these manually before moving on to more generic analyses.</p>
+<p>In the <code>Description</code> column, we can see some overlap in values. These features are likely to represent the same variable, so we can reduce the dimensionality of the dataset just by smartly combining some variables.</p>
+<p>Let’s start with common sense and group some of the variables manually to prepare the data for more automated pipelines. Here are some logical groups we can check,</p>
+<ul>
+<li>scheme_name, scheme_management, installer, funder</li>
+<li>extraction_type, extraction_type_group, extraction_type_class</li>
+<li>management, management_group</li>
+<li>scheme_management, scheme_name</li>
+<li>payment, payment_type</li>
+<li>water_quality, quality_group</li>
+<li>quantity_quantity_group</li>
+<li>source, source_class</li>
+<li>waterpoint_type, waterpoint_type_group</li>
+</ul>
+<p>Note how these variables are the majority of all non-numeric features.</p>
+<div id="conclusion-of-groups" class="section level3">
+<h3>Conclusion of groups</h3>
+<p>Now, you could look into each variable group to determine what we did. But for clarify, and to save your scrollwheel, here is the conclusion up front.</p>
+<p><strong>Remove 9 features</strong></p>
+<ul>
+<li><code>scheme_name</code>, <code>scheme_management</code> , too many unique</li>
+<li><code>extraction_type_group</code>, overlaps with <code>extraction_type</code> and <code>extraction_class</code></li>
+<li><code>funder</code> and <code>installer</code>, many missing values, unique values and data-entry inconsistencies</li>
+<li><code>source_class</code>, <code>payment</code>, <code>waterpoint_type_group</code>, <code>management_group</code> because they are duplicates of other variables</li>
+</ul>
+<p><strong>Edit 1 feature</strong></p>
+<ul>
+<li><code>extraction_type</code>, rename some similar categories with very low occurences</li>
+</ul>
+<p>Let’s make a note of these findings. We will cleanly integrate these steps into our data preprocessing pipeline.</p>
+</div>
+<div id="scheme_name-scheme_management-installer-funder" class="section level3">
+<h3>Scheme_name, scheme_management, installer, funder</h3>
+<p>These 4 features have far too many unique values to be used as categorical labels. In some cases we can bin groups by grouping the least occurring data as ‘other’, but in these cases the arity is too high.</p>
+<p>Together with spelling errors in these labels we won’t spend the effort to transform these values into something more useful with text processing.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">scheme_name</th>
+<th align="left">scheme_management</th>
+<th align="left">installer</th>
+<th align="left">funder</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"></td>
+<td align="left">vwc</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="right">1311</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="left">vwc</td>
+<td align="left">kkkt</td>
+<td align="left">kkkt</td>
+<td align="right">841</td>
+</tr>
+<tr class="odd">
+<td align="left"></td>
+<td align="left">vwc</td>
+<td align="left">dwe</td>
+<td align="left">hesawa</td>
+<td align="right">616</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="left">vwc</td>
+<td align="left">government</td>
+<td align="left">government of tanzania</td>
+<td align="right">615</td>
+</tr>
+<tr class="odd">
+<td align="left"></td>
+<td align="left">vwc</td>
+<td align="left">dwe</td>
+<td align="left">government of tanzania</td>
+<td align="right">600</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="left">wug</td>
+<td align="left">dwe</td>
+<td align="left">dwsp</td>
+<td align="right">567</td>
+</tr>
+<tr class="odd">
+<td align="left"></td>
+<td align="left"></td>
+<td align="left">dwe</td>
+<td align="left">rwssp</td>
+<td align="right">522</td>
+</tr>
+<tr class="even">
+<td align="left">k</td>
+<td align="left">vwc</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="right">513</td>
+</tr>
+<tr class="odd">
+<td align="left"></td>
+<td align="left">wug</td>
+<td align="left">dwe</td>
+<td align="left">netherlands</td>
+<td align="right">457</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="left">vwc</td>
+<td align="left">hesawa</td>
+<td align="left">hifab</td>
+<td align="right">450</td>
+</tr>
+</tbody>
+</table>
+<p>The scheme names are a mess. There are non-ambiguous names, spelling errors, numeric values, etc. Values such as like ‘Adra’, ‘ADRA’, ‘WOULD BANK’, etc.. are variations on each other. We can reduce this already by using the lowercase version, but not enough to warrant the inclusion of this variable.</p>
+<pre><code>## .
+##                           K          None      Borehole Chalinze wate 
+##         28166           682           644           546           405 
+##             M 
+##           400</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">scheme_name</th>
+<th align="left">status_group</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">14 Kambarage</td>
+<td align="left">functional</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="left">A</td>
+<td align="left">functional</td>
+<td align="right">23</td>
+</tr>
+<tr class="odd">
+<td align="left">A</td>
+<td align="left">functional needs repair</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">A</td>
+<td align="left">non functional</td>
+<td align="right">17</td>
+</tr>
+<tr class="odd">
+<td align="left">ADP</td>
+<td align="left">functional</td>
+<td align="right">6</td>
+</tr>
+<tr class="even">
+<td align="left">ADP</td>
+<td align="left">non functional</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">ADP Simbo</td>
+<td align="left">functional</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="left">ADP Simbo</td>
+<td align="left">non functional</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">ADP Simbu</td>
+<td align="left">non functional</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Adra</td>
+<td align="left">functional</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">ADRA</td>
+<td align="left">functional</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td align="left">ADRA</td>
+<td align="left">non functional</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">African Barrick Gold</td>
+<td align="left">functional</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">AIC</td>
+<td align="left">functional</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">AIC kahunda</td>
+<td align="left">functional</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Akheri gravity water supply</td>
+<td align="left">functional</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="left">Akheri gravity water supply</td>
+<td align="left">functional needs repair</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Akheri gravity water supply</td>
+<td align="left">non functional</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Alpha crust</td>
+<td align="left">functional</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">Alpha crust</td>
+<td align="left">functional needs repair</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr class="header">
+<th align="left">.</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">VWC</td>
+<td align="right">36793</td>
+</tr>
+<tr class="even">
+<td align="left">WUG</td>
+<td align="right">5206</td>
+</tr>
+<tr class="odd">
+<td align="left"></td>
+<td align="right">3877</td>
+</tr>
+<tr class="even">
+<td align="left">Water authority</td>
+<td align="right">3153</td>
+</tr>
+<tr class="odd">
+<td align="left">WUA</td>
+<td align="right">2883</td>
+</tr>
+<tr class="even">
+<td align="left">Water Board</td>
+<td align="right">2748</td>
+</tr>
+</tbody>
+</table>
+<p><img src="data-exploration-features_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre><code>## Scheme management in 10 groups accounts for 99.71% of the data. And just VWC is 61.94%</code></pre>
+<div id="installer-and-funder" class="section level4">
+<h4>Installer and funder</h4>
+<p>The installer and funder values have many levels. Again a lot of data-entry errors seem apparent in the data, and when transformed to lower-case the installer and funder variables overlap for over 50%. Because of the arity of this data we remove both.</p>
+<ul>
+<li>Possible to do string matching</li>
+</ul>
+<pre><code>## .
+##        DWE            Government        RWE      Commu     DANIDA 
+##      17402       3655       1825       1206       1060       1050</code></pre>
+<pre><code>## [1] 2146</code></pre>
+<p><img src="data-exploration-features_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">.</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Government Of Tanzania</td>
+<td align="right">9084</td>
+</tr>
+<tr class="even">
+<td align="left"></td>
+<td align="right">3635</td>
+</tr>
+<tr class="odd">
+<td align="left">Danida</td>
+<td align="right">3114</td>
+</tr>
+<tr class="even">
+<td align="left">Hesawa</td>
+<td align="right">2202</td>
+</tr>
+<tr class="odd">
+<td align="left">Rwssp</td>
+<td align="right">1374</td>
+</tr>
+<tr class="even">
+<td align="left">World Bank</td>
+<td align="right">1349</td>
+</tr>
+</tbody>
+</table>
+<pre><code>## Of the 1898 unique funder names, 1065 overlap with the installer names!</code></pre>
+</div>
+</div>
+<div id="extraction-types" class="section level3">
+<h3>Extraction types</h3>
+<pre><code>##       extraction_type extraction_type_group extraction_type_class 
+##                    18                    13                     7</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">extraction_type</th>
+<th align="left">extraction_type_group</th>
+<th align="left">extraction_type_class</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">afridev</td>
+<td align="left">afridev</td>
+<td align="left">handpump</td>
+<td align="right">1770</td>
+</tr>
+<tr class="even">
+<td align="left">cemo</td>
+<td align="left">other motorpump</td>
+<td align="left">motorpump</td>
+<td align="right">90</td>
+</tr>
+<tr class="odd">
+<td align="left">climax</td>
+<td align="left">other motorpump</td>
+<td align="left">motorpump</td>
+<td align="right">32</td>
+</tr>
+<tr class="even">
+<td align="left">gravity</td>
+<td align="left">gravity</td>
+<td align="left">gravity</td>
+<td align="right">26780</td>
+</tr>
+<tr class="odd">
+<td align="left">india mark ii</td>
+<td align="left">india mark ii</td>
+<td align="left">handpump</td>
+<td align="right">2400</td>
+</tr>
+<tr class="even">
+<td align="left">india mark iii</td>
+<td align="left">india mark iii</td>
+<td align="left">handpump</td>
+<td align="right">98</td>
+</tr>
+<tr class="odd">
+<td align="left">ksb</td>
+<td align="left">submersible</td>
+<td align="left">submersible</td>
+<td align="right">1415</td>
+</tr>
+<tr class="even">
+<td align="left">mono</td>
+<td align="left">mono</td>
+<td align="left">motorpump</td>
+<td align="right">2865</td>
+</tr>
+<tr class="odd">
+<td align="left">nira/tanira</td>
+<td align="left">nira/tanira</td>
+<td align="left">handpump</td>
+<td align="right">8154</td>
+</tr>
+<tr class="even">
+<td align="left">other</td>
+<td align="left">other</td>
+<td align="left">other</td>
+<td align="right">6430</td>
+</tr>
+<tr class="odd">
+<td align="left">other - mkulima/shinyanga</td>
+<td align="left">other handpump</td>
+<td align="left">handpump</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">other - play pump</td>
+<td align="left">other handpump</td>
+<td align="left">handpump</td>
+<td align="right">85</td>
+</tr>
+<tr class="odd">
+<td align="left">other - rope pump</td>
+<td align="left">rope pump</td>
+<td align="left">rope pump</td>
+<td align="right">451</td>
+</tr>
+<tr class="even">
+<td align="left">other - swn 81</td>
+<td align="left">other handpump</td>
+<td align="left">handpump</td>
+<td align="right">229</td>
+</tr>
+<tr class="odd">
+<td align="left">submersible</td>
+<td align="left">submersible</td>
+<td align="left">submersible</td>
+<td align="right">4764</td>
+</tr>
+<tr class="even">
+<td align="left">swn 80</td>
+<td align="left">swn 80</td>
+<td align="left">handpump</td>
+<td align="right">3670</td>
+</tr>
+<tr class="odd">
+<td align="left">walimi</td>
+<td align="left">other handpump</td>
+<td align="left">handpump</td>
+<td align="right">48</td>
+</tr>
+<tr class="even">
+<td align="left">windmill</td>
+<td align="left">wind-powered</td>
+<td align="left">wind-powered</td>
+<td align="right">117</td>
+</tr>
+</tbody>
+</table>
+<p>By far the most prevalent type of waterpump is the gravity water pump type. This type of pump is eco-friendly as it does not use energy other than gravity.</p>
+<p>Notice that there are some very small groups in the data, mostly due to the inclusion of <code>extraction_type</code>. The <code>extraction_type</code> has some values that we could combine with other categories to reduce the dimensionality.</p>
+<ul>
+<li><strong>india mark ii</strong> and <strong>india mark iii</strong> can be combined to just <strong>india mark</strong></li>
+<li><strong>cemo</strong> and <strong>climax</strong> are just two types of motorpumps, let’s not differentiate these two</li>
+<li><strong>other - mkulima/shinyanga</strong> is very specific, we can just classify this as handpump together with <strong>play pump</strong> and <strong>walimi</strong></li>
+<li>Lastly the <strong>swn 81</strong> and <strong>swn 80</strong> are both handpumps, we can classifiy these as <strong>swn</strong>
+<ul>
+<li>The SWN 80 and SWN 81 type of handle pumps only differ in their pump head so that the SWN 81 can reach deeper wells. <a href="https://www.ircwash.org/sites/default/files/232.2-13249.pdf">Read more about handpumps here:)</a></li>
+<li>Fun fact, the SWN stands for ‘Sociale Werkplaats Nunspeet’! The SWN family of pumps was introduced partly by a workshop for the handicapped in the Netherlands sine 1976.</li>
+</ul></li>
+</ul>
+<p>Let’s manually combine some of the feature groups into related groups.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">extraction_type</th>
+<th align="left">extraction_type_class</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">afridev</td>
+<td align="left">handpump</td>
+<td align="right">1770</td>
+</tr>
+<tr class="even">
+<td align="left">gravity</td>
+<td align="left">gravity</td>
+<td align="right">26780</td>
+</tr>
+<tr class="odd">
+<td align="left">handpump</td>
+<td align="left">handpump</td>
+<td align="right">135</td>
+</tr>
+<tr class="even">
+<td align="left">india mark</td>
+<td align="left">handpump</td>
+<td align="right">2498</td>
+</tr>
+<tr class="odd">
+<td align="left">ksb</td>
+<td align="left">submersible</td>
+<td align="right">1415</td>
+</tr>
+<tr class="even">
+<td align="left">mono</td>
+<td align="left">motorpump</td>
+<td align="right">2865</td>
+</tr>
+<tr class="odd">
+<td align="left">motorpump</td>
+<td align="left">motorpump</td>
+<td align="right">122</td>
+</tr>
+<tr class="even">
+<td align="left">nira/tanira</td>
+<td align="left">handpump</td>
+<td align="right">8154</td>
+</tr>
+<tr class="odd">
+<td align="left">other</td>
+<td align="left">other</td>
+<td align="right">6430</td>
+</tr>
+<tr class="even">
+<td align="left">other - rope pump</td>
+<td align="left">rope pump</td>
+<td align="right">451</td>
+</tr>
+<tr class="odd">
+<td align="left">submersible</td>
+<td align="left">submersible</td>
+<td align="right">4764</td>
+</tr>
+<tr class="even">
+<td align="left">swn</td>
+<td align="left">handpump</td>
+<td align="right">3899</td>
+</tr>
+<tr class="odd">
+<td align="left">windmill</td>
+<td align="left">wind-powered</td>
+<td align="right">117</td>
+</tr>
+</tbody>
+</table>
+<p><img src="data-exploration-features_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>Using two out of three extraction types, after some adjustments, in the data we can classify all the data in a way that none of the groups is truly underrepresented.</p>
+</div>
+<div id="management-and-management_group" class="section level3">
+<h3>management and management_group</h3>
+<p>These two variables seem to mean the exact same thing.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">management</th>
+<th align="left">management_group</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">company</td>
+<td align="left">commercial</td>
+<td align="right">685</td>
+</tr>
+<tr class="even">
+<td align="left">other</td>
+<td align="left">other</td>
+<td align="right">844</td>
+</tr>
+<tr class="odd">
+<td align="left">other - school</td>
+<td align="left">other</td>
+<td align="right">99</td>
+</tr>
+<tr class="even">
+<td align="left">parastatal</td>
+<td align="left">parastatal</td>
+<td align="right">1768</td>
+</tr>
+<tr class="odd">
+<td align="left">private operator</td>
+<td align="left">commercial</td>
+<td align="right">1971</td>
+</tr>
+<tr class="even">
+<td align="left">trust</td>
+<td align="left">commercial</td>
+<td align="right">78</td>
+</tr>
+<tr class="odd">
+<td align="left">unknown</td>
+<td align="left">unknown</td>
+<td align="right">561</td>
+</tr>
+<tr class="even">
+<td align="left">vwc</td>
+<td align="left">user-group</td>
+<td align="right">40507</td>
+</tr>
+<tr class="odd">
+<td align="left">water authority</td>
+<td align="left">commercial</td>
+<td align="right">904</td>
+</tr>
+<tr class="even">
+<td align="left">water board</td>
+<td align="left">user-group</td>
+<td align="right">2933</td>
+</tr>
+<tr class="odd">
+<td align="left">wua</td>
+<td align="left">user-group</td>
+<td align="right">2535</td>
+</tr>
+<tr class="even">
+<td align="left">wug</td>
+<td align="left">user-group</td>
+<td align="right">6515</td>
+</tr>
+</tbody>
+</table>
+<p>We will select the column with <em>more</em> information, so we keep the <code>management</code> variable and drop the <code>management_group</code>.</p>
+</div>
+<div id="payment-and-payment_type" class="section level3">
+<h3>Payment and payment_type</h3>
+<p>The payment and payment type columns also mean the exact same thing.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">payment</th>
+<th align="left">payment_type</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">never pay</td>
+<td align="left">never pay</td>
+<td align="right">25348</td>
+</tr>
+<tr class="even">
+<td align="left">other</td>
+<td align="left">other</td>
+<td align="right">1054</td>
+</tr>
+<tr class="odd">
+<td align="left">pay annually</td>
+<td align="left">annually</td>
+<td align="right">3642</td>
+</tr>
+<tr class="even">
+<td align="left">pay monthly</td>
+<td align="left">monthly</td>
+<td align="right">8300</td>
+</tr>
+<tr class="odd">
+<td align="left">pay per bucket</td>
+<td align="left">per bucket</td>
+<td align="right">8985</td>
+</tr>
+<tr class="even">
+<td align="left">pay when scheme fails</td>
+<td align="left">on failure</td>
+<td align="right">3914</td>
+</tr>
+<tr class="odd">
+<td align="left">unknown</td>
+<td align="left">unknown</td>
+<td align="right">8157</td>
+</tr>
+</tbody>
+</table>
+<p>The payment_type variables are more concise so we will drop the <code>payment</code> column.</p>
+</div>
+<div id="water-quality-and-quality-group" class="section level3">
+<h3>Water quality and quality group</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="left">water_quality</th>
+<th align="left">quality_group</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">coloured</td>
+<td align="left">colored</td>
+<td align="right">490</td>
+</tr>
+<tr class="even">
+<td align="left">fluoride</td>
+<td align="left">fluoride</td>
+<td align="right">200</td>
+</tr>
+<tr class="odd">
+<td align="left">fluoride abandoned</td>
+<td align="left">fluoride</td>
+<td align="right">17</td>
+</tr>
+<tr class="even">
+<td align="left">milky</td>
+<td align="left">milky</td>
+<td align="right">804</td>
+</tr>
+<tr class="odd">
+<td align="left">salty</td>
+<td align="left">salty</td>
+<td align="right">4856</td>
+</tr>
+<tr class="even">
+<td align="left">salty abandoned</td>
+<td align="left">salty</td>
+<td align="right">339</td>
+</tr>
+<tr class="odd">
+<td align="left">soft</td>
+<td align="left">good</td>
+<td align="right">50818</td>
+</tr>
+<tr class="even">
+<td align="left">unknown</td>
+<td align="left">unknown</td>
+<td align="right">1876</td>
+</tr>
+</tbody>
+</table>
+<p><img src="data-exploration-features_files/figure-html/quality%20vs%20status-1.png" width="672" /></p>
+<p>The <code>water_quality</code> contains more information so we will drop the <code>quality_group</code>.</p>
+<p>The <code>water_quality</code> is also related to the <code>amount_tsh</code> in the data, even though we are removing <code>amount_tsh</code>(!) The only pumps where a significant amount of water is available is the ones where ‘soft’ water was found. So even though we are leaving out <code>amount_tsh</code>, we will still capture some of its information by including the <code>water_quality</code>.</p>
+<p>We could improve the visualisation above but it will likely not affect the choices we already made, so let’s move on…</p>
+</div>
+<div id="quantity-and-quantity_group" class="section level3">
+<h3>Quantity and quantity_group</h3>
+<p>The <code>quantity</code> and <code>quantity_group</code> sounds like they have the same relation as the water quality. Let’s check!</p>
+<pre><code>## # A tibble: 5 x 3
+## # Groups:   quantity [?]
+##   quantity     quantity_group     n
+##   &lt;fct&gt;        &lt;fct&gt;          &lt;int&gt;
+## 1 dry          dry             6246
+## 2 enough       enough         33186
+## 3 insufficient insufficient   15129
+## 4 seasonal     seasonal        4050
+## 5 unknown      unknown          789</code></pre>
+<p>welp.. we checked, and we’ll just leave out the <code>quantity_group</code> column.</p>
+</div>
+<div id="source-source_class-and-source_type" class="section level3">
+<h3>Source, source_class and source_type</h3>
+<p>The source of water for each waterpoint is encoded in three values.</p>
+<ul>
+<li>source, most detailed definition</li>
+<li>source_class, 4 categories of all source types</li>
+<li>source_type, the same as <code>source</code> except that unkown=other</li>
+</ul>
+<pre><code>## # A tibble: 10 x 4
+## # Groups:   source, source_class [?]
+##    source               source_class source_type              n
+##    &lt;fct&gt;                &lt;fct&gt;        &lt;fct&gt;                &lt;int&gt;
+##  1 dam                  surface      dam                    656
+##  2 hand dtw             groundwater  borehole               874
+##  3 lake                 surface      river/lake             765
+##  4 machine dbh          groundwater  borehole             11075
+##  5 other                unknown      other                  212
+##  6 rainwater harvesting surface      rainwater harvesting  2295
+##  7 river                surface      river/lake            9612
+##  8 shallow well         groundwater  shallow well         16824
+##  9 spring               groundwater  spring               17021
+## 10 unknown              unknown      other                   66</code></pre>
+<p>The water <code>source</code> is more detailed than <code>source_class</code> and contains the exact same values as <code>source_type</code>. So let’s keep only the <code>source</code> and <code>source_type</code>. However, the <code>source_class</code> contains only 3 categories and this more general distinction may in fact help us make predictions. We can calculate the feature importance later, so let’s keep both variables in our data and verify whether inclusion of <code>source_class</code> improves the model at all.</p>
+<p>Alternatively, is the water quality correlated at all to water pump status?</p>
+<p><img src="data-exploration-features_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>The source is definitely not a perfect prediction of water pump status, but at least a distinction between classes could be beneficial. It remains to be seen whether the water source is truly indicative of the water pump status, why would a pump near a lake be more likely to be non-functional than that near a spring? Unless the water source has dried up, but this would rather affect multiple pumps in the same area.</p>
+<p>If there was more time available we could find if there is just a cluster of water pumps at a single lake that are non-functional because of regional differences, for example. The location of a pump probably determines the water source, and since we will already take the gps-coordinates into account we might not be including any new information with the <code>source</code> feature.</p>
+</div>
+<div id="waterpoint_type-and-waterpoint_type_group" class="section level3">
+<h3>Waterpoint_type and waterpoint_type_group</h3>
+<p>Finally, this group of two variables may be reduced to a single variable. They are once again the exacty same feature.</p>
+<pre><code>## # A tibble: 7 x 3
+## # Groups:   waterpoint_type [?]
+##   waterpoint_type             waterpoint_type_group     n
+##   &lt;fct&gt;                       &lt;fct&gt;                 &lt;int&gt;
+## 1 cattle trough               cattle trough           116
+## 2 communal standpipe          communal standpipe    28522
+## 3 communal standpipe multiple communal standpipe     6103
+## 4 dam                         dam                       7
+## 5 hand pump                   hand pump             17488
+## 6 improved spring             improved spring         784
+## 7 other                       other                  6380</code></pre>
+</div>
+</div>
+<div id="contiuous-variables" class="section level2">
+<h2>Contiuous variables</h2>
+<p>Now that we have removed and changed some of the overlapping labels, we are left with the following features.</p>
+<div id="conclusion" class="section level3">
+<h3>Conclusion</h3>
+<p>Again let us start with the conclusion!</p>
+<p><strong>Remove</strong></p>
+<ul>
+<li><code>amount_tsh</code></li>
+<li><code>num_private</code></li>
+<li>`</li>
+</ul>
+</div>
+<div id="amount_tsh" class="section level3">
+<h3>amount_tsh</h3>
+<p>The amount of water available to the water pump seems like an important feature, but it only consists of 98 unique values! Let’s see what is going on here.</p>
+<pre><code>## 
+##     0   0.2  0.25     1     2     5     6     7     9    10 
+## 41639     3     1     3    13   376   190    69     1   806</code></pre>
+<p>Ah, there are many <code>0</code> values in the data. Based on all the other values of this feature it does not seem likely that <code>0</code> always indicates a missing value; <code>0</code> seems like it can be a possible value. However, there is no way to differentiate between missing values and dry water pumps.</p>
+<p>For now we remove this data from our cleaned data because of the large number of ‘missing’ values.</p>
+</div>
+<div id="gps-coordinates" class="section level3">
+<h3>GPS coordinates</h3>
+<p>There are three types of gps coordinates in the data,</p>
+<ul>
+<li>gps_height</li>
+<li>longitude</li>
+<li>latitude</li>
+</ul>
+<p>We expect these to be continuous values.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">gps_height</th>
+<th align="right">longitude</th>
+<th align="right">latitude</th>
+<th align="right">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1812</td>
+</tr>
+</tbody>
+</table>
+<p>Of all the observations we only find that 1812 observations are missing values, where gps_height, longitude and latitude are all 0.</p>
+<p>We could try to deal with these values in a number of ways,</p>
+<ul>
+<li>Impute values based on other location data (region_code, district, basin, etc.)</li>
+<li>Ignore missing values as it only comprises small part of the data</li>
+<li>At least center the water pumps to somewhere in Tanzania</li>
+</ul>
+<p>Of course this has varying levels of complexity and for now we simply ignore missing values and leave them as is. I do not think that the GPS data adds any new information since all location data is already encoded in various ways using district and region codes.</p>
+<p>I have seen others impute these values, even the gps_height, but imputing GPS data with the available is far fetched to me.</p>
+</div>
+<div id="num_private" class="section level3">
+<h3>num_private</h3>
+<p>num_private comes without a feature description, but with a lot of zero-values.</p>
+<p>We will remove <code>num_private</code> from the data since 98.7255892% of the observations is zero/missing.</p>
+</div>
+<div id="construction_year" class="section level3">
+<h3>construction_year</h3>
+<p>Missing values of <code>construction_year</code> are indicated by zero-values. How to replace these is not necessarily straightforward since we treat this as a continuous variable! Since the difference between 1955 and 2000 is much smaller than 1955 and 0 we should be careful here! If the construction year is predictive of the water pump status then zero-values will likely introduce a bias.</p>
+<p>There are a TON of missing values in this variable. But a baseline value such as the median is better than using 0 for missing values.</p>
+<p>For missing values we should definitely impute some value. Traditionally the most straightforward way is to just impute the mean or median value. We may correct for region or pump type to improve this imputation. A quick glance at factors that may indicate a missing construction_year we don’t find any. So let us use a very simple imputation method to save time.</p>
+<p>Furthermore, we’re better off to actually add the <code>age</code> variable to the data! Simply by calculating the difference between <code>date_recorded</code> and <code>construction_year</code>.</p>
+<p><img src="data-exploration-features_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+</div>
+</div>
+<div id="high-number-of-categories" class="section level2">
+<h2>High number of categories</h2>
+<p>Some variables have an extreme amount of categories.</p>
+<ul>
+<li>subvillage, 19288 unique values</li>
+<li>lga, 125 unique values</li>
+<li>ward, 2092 unique values</li>
+</ul>
+<p>Upon closer inspection, from the <code>lga</code> variable we can infer some information!</p>
+<pre><code>## 
+## Arusha Rural Arusha Urban       Babati     Bagamoyo         Bahi 
+##         1252           63          511          997          224 
+##      Bariadi   Biharamulo Bukoba Rural Bukoba Urban      Bukombe 
+##         1177          403          487           88          514</code></pre>
+<p>Some of these values indicate a placename, and since we already have GPS coordinates, region codes and district codes we do not find any additional information in this feature. However…!</p>
+<p>Noticate how some of the <code>lga</code> values above end with <strong>urban</strong> or <strong>rural</strong>! We can create new variable called <code>urban_rural</code> with the levels,</p>
+<ul>
+<li>rural</li>
+<li>urban</li>
+<li>other</li>
+</ul>
+<p>This new feature may be more informative than raw <code>lga</code>. So in our pipeline we have added this transformation.</p>
+</div>
+<div id="section" class="section level2">
+<h2>……….</h2>
+<p>More exploratory steps were lost when cleaning up files before syncing with git. While I still remember the findings, you will not find them presented here or anywhere sadly.</p>
+<p>More analysis was done, including classification using test/training sets split either at random or by selecting the ‘first’ 70% of the observations based on the date_recorded, so that we can better evaluate our predictions of future observations.</p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

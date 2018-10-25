@@ -9,7 +9,8 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUCKET = lvt-vantage-ai-case
 PROFILE = default
 PROJECT_NAME = vantage-project
-PYTHON_INTERPRETER = python3
+PYTHON_INTERPRETER = python
+R_INTERPRETER = Rscript
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
@@ -46,11 +47,15 @@ endif
 
 ## Download Data from S3
 sync_data_from_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync s3://$(BUCKET)/data/ data/
-else
-	aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
-endif
+	# Replaced this with hard-coded public links in get_data.py
+	$(PYTHON_INTERPRETER) vantage/data/get_data.py
+
+	# I really like the idea of syncing data with S3 though!
+	# ifeq (default,$(PROFILE))
+	# 	aws s3 sync s3://$(BUCKET)/data/ data/
+	# else
+	# 	aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
+	# endif
 
 ## Set up python interpreter environment
 create_environment:
@@ -68,7 +73,16 @@ test_environment:
 #################################################################################
 # PROJECT GOALS                                                                 #
 #################################################################################
-finaldataset: data/processed/dataset.csv
+report: data/interim/data_encoded.csv 
+	Rscript -e "library(rmarkdown); render_site('./reports/.')"
+
+# The final dataset is the encoded dataset as I have removed any steps of
+# the classification itself. This code was not finished and thus removed.
+finaldataset: data/interim/data_encoded.csv
+
+cleandatatset: data/interim/data_cleaned.csv
+
+encodedataset: data/interim/data_encoded.csv
 
 #################################################################################
 # PROJECT RULES                                                                 #
@@ -76,9 +90,18 @@ finaldataset: data/processed/dataset.csv
 environment.log: environment.yml
 	conda env update --prune -f environment.yml
 	touch environment.log
+	
+data/processed/dataset.csv:	data/interim/data_encoded.csv
+	$(PYTHON_INTERPRETER) vantage/data/clean_data
 
-data/processed/dataset.csv:	data/raw/inputfiles.csv
-	$(PYTHON_INTERPRETER) -m vantage.data.make_dataset $< $@
+data/interim/data_encoded.csv: data/interim/data_cleaned.csv
+	$(PYTHON_INTERPRETER) vantage/features/encode_data.py
+	
+data/interim/data_cleaned.csv:
+	$(PYTHON_INTERPRETER) vantage/data/clean_data.py
+
+# One more rule to 'get' the data if it is not there?
+# Or is it cleaner to just run make get_data once?
 
 #################################################################################
 # Self Documenting Commands                                                     #

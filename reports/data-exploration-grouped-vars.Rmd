@@ -1,0 +1,190 @@
+---
+title: "Grouped-variables"
+author: "Lodewic van Twillert"
+date: "10/24/2018"
+output: 
+  html_document:
+    fig_caption: yes
+    theme: cerulean
+    toc_float: yes
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+```{r libraries}
+# Load libraries
+library(tidyverse)
+library(broom)
+library(ggthemes)
+library(DT)
+library(knitr)
+```
+
+```{r echo=F}
+# Read the raw data
+data <- read.csv("../data/raw/water_pump_set.csv")
+labels <- read.csv("../data/raw/water_pump_labels.csv")
+features <- read.csv("../data/raw/water_pump_features.csv")
+
+# Merge labels and features into single dataset by id
+df <- merge(data, labels, by="id")
+
+# Let's add some more info to the feature info using tidyverse piping
+feature_desc <- features %>% filter(Feature %in% colnames(data)) %>%
+  mutate(example = sapply(data[1, -1], as.character), # First row of the data without the 'id' column
+       unique = map_int(data[,-1],function(x) length(unique(x))),
+       type = map_chr(data[,-1], function(x) class(unlist(x))), # 
+       nonzero = map_int(data[,-1], function(x) sum(as.character(x) != "0")), # Nonzero values, assuming 0 usually means NA
+       max_single = map_int(data[,-1], function(x) max(table(x))),      # Observations of most occuring value
+       max_occurence = map_chr(data[,-1], function(x) names(which.max(table(x))))) # Highest occuring value
+```
+
+# Selecting the right features
+
+Selecting the right features is extremely important! Especially in this case where we are dealing with
+a majority of categorical features. Many of these categorical variables are redundant,
+so let's first reduce the dimensionality of the data by selecting the most valuable and unique
+variables.
+
+## Handling feature groups 
+
+The variables in the data are far from independent, some variables practically mean the same thing.
+Some feature groups are so painfully obvious that we should clean these manually before moving on to
+more generic analyses.
+
+In the `Description` column, we can see some overlap in values. These features are likely to represent the same
+variable, so we can reduce the dimensionality of the dataset just by smartly combining some variables.
+
+Let's start with common sense and group some of the variables manually to prepare the data
+for more automated pipelines. Here are some logical groups we can check,
+
+  - scheme_name, scheme_management, installer, funder
+  - extraction_type, extraction_type_group, extraction_type_class
+  - management, management_group
+  - scheme_management, scheme_name
+  - payment, payment_type
+  - water_quality, quality_group
+  - quantity_quantity_group
+  - source, source_class
+  - waterpoint_type, waterpoint_type_group
+  
+### Scheme_name, scheme_management, installer, funder
+ 
+These 4 features have far too many unique values to be used as categorical labels.
+In some cases we can bin groups by grouping the least occurring data as 'other', but 
+in these cases the arity is too high.
+
+Together with spelling errors in these labels we won't spend the effort to transform
+these values into something more useful with text processing.
+ 
+```{r scheme management table}
+data %>% 
+    select(scheme_name, scheme_management, installer, funder) %>%
+    mutate_all(as.character) %>%
+    mutate_all(tolower) %>% # To lowercase since there are many typing 'errors' or inconsistencies
+    group_by(scheme_name, scheme_management, installer, funder) %>%
+    tally() %>% 
+    arrange(desc(n)) %>% 
+    head(10) %>%
+    datatable()
+```
+
+The scheme names are a mess. There are non-ambiguous names, spelling errors,
+numeric values, etc. Values such as like 'Adra', 'ADRA', 'WOULD BANK', etc.. are
+variations on each other. We can reduce this already by using the lowercase version, 
+but not enough to warrant the inclusion of this variable.
+
+```{r scheme name table}
+# Scheme names
+data %>% select(scheme_name) %>% table() %>% sort(decreasing = T) %>% head()
+# Half the data is missing data, and the rest is extremely scattered
+# Furthermore there are many unambiguous names and spelling errors like 'Adra', 'ADRA', 'WOULD BANK', etc..
+df %>%
+    filter(scheme_name != "") %>%
+    group_by(scheme_name, status_group) %>%
+    tally() %>% head(20) %>%
+    datatable()
+# Based on this we remove the scheme_name entirely
+```
+
+```{r}
+# Scheme management
+data %>% select(scheme_management) %>% table() %>% sort(decreasing = T) %>% 
+  head()
+
+# Plot label per scheme_management
+df %>% select(scheme_management, status_group) %>%
+    ggplot(aes(x = scheme_management, fill = status_group)) +
+    geom_bar() + coord_flip() +
+    ggtitle("Water pomp status voor management_scheme") +
+    theme_fivethirtyeight()
+
+# Most of the water pumps are from a handful of installers. 
+# We could consider grouping all the low occurences into a group 'other'
+# Plot label per scheme_management
+scheme_management_groups = df %>% select(scheme_management, status_group) %>%
+    group_by(scheme_management) %>%
+    tally() %>%
+    top_n(10, n)
+
+cat(sprintf("Scheme management in 10 groups accounts for %1.2f%% of the data. And just VWC is %1.2f%%", 
+            100 * sum(scheme_management_groups$n) / nrow(df),
+            100 * max(scheme_management_groups$n) / nrow(df)))
+```
+
+#### Installer and funder
+
+The installer and funder values have many levels. Again a lot of data-entry errors
+seem apparent in the data, and when transformed to lower-case the installer and funder
+variables overlap for over 50%. Because of the arity of this data we remove both.
+
+  - Possible to do string matching
+
+```{r}
+# installer
+data %>% select(installer) %>% table() %>% sort(decreasing = T) %>% head()
+length(unique(data$installer))
+
+# Most of the water pumps are from a handful of installers. 
+# We could consider grouping all the low occurences into a group 'other'
+# Plot label per scheme_management
+installer_groups = df %>% select(installer, status_group) %>%
+    group_by(installer) %>%
+    tally() %>%
+    top_n(20, n)
+
+# Plot installer versus status_group to verify 
+df %>% select(installer, status_group) %>%
+    mutate(installer = ifelse(installer %in% installer_groups$installer, as.character(installer), "other"),
+           installer = ifelse(installer %in% c("", "0"), "unknown", installer)) %>%
+    ggplot(aes(x = installer, fill = status_group)) +
+    geom_bar() + coord_flip() +
+    ggtitle("Water pomp status voor installer", subtitle = "Kleine groepen samengevoegd in 'other'") +
+    theme_fivethirtyeight() 
+
+# Show counts of installer labes, only top20
+# Notice that many of these have about the same number of observations and grouping all the others into
+# 'other' is quite arbitrary since the 'other' group will still be half the data. 
+# The number of 'larger' groups and the number of spelling errors in the data require more detailed feature engineering
+# like some kind of string matching- which we will not spend our time on.
+# THIS FEATURE WILL BE REMOVED FROM THE MODELLING DATA
+```
+
+```{r}
+# funder
+data %>% select(funder) %>% table() %>% sort(decreasing = T) %>% head()
+
+cat(sprintf("Of the %i unique funder names, %i overlap with the installer names!",
+            length(unique(data$funder)),
+            length(intersect(tolower(as.character(data$funder)), tolower(as.character(data$installer))))))
+# Due to the high overlap between funder and installer, we can assume that these two are heavily related and 
+# will probably give us the same difficulty as the funder names by themselves.
+# WE REMOVE THIS FEATURE FROM THE DATASET!
+```
+
+
+
+

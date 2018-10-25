@@ -19,6 +19,7 @@ dependencies:
 - flake8
 - pip
 - r-essentials
+- r-rmarkdown
 - r-reticulate
 - r-DT
 - r-leaflet

@@ -1,0 +1,17 @@
+name: LvT - Tanzania water pumps
+output_dir: Report_site
+navbar:
+  title: "Lodewic - Water pomp onderhoud"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Data exploration"
+      href: data-exploration.html
+    - text: "Feature exploration"
+      href: data-exploration-features.html
+output:
+  html_document:
+    fig_caption: yes
+    theme: cerulean
+    toc_float: yes
+    code_folding: hide
