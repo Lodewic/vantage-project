@@ -40,10 +40,10 @@ To run the computational data transformation steps:
     
     make finaldataset
 
-
-
 This will only create a cleaned up subset of the data and an encoded version of the data to use
 in Python for classification modelling using one-hot encoding of included categorical data.
+
+### Report
 
 To create a small report 'website', run:
   
@@ -55,6 +55,37 @@ You can use this, instead of jupyter notebooks, to do your data analysis and exp
 in multiple Rmarkdown files and then knit them together as a website. I think a website output for
 larger analyses is well-suited if there are many technical steps that may not be relevant to every reader.
 
+### Rstudio
+
+You can use RStudio and the `reticulate` package, enabling you to run Python code within
+Rmarkdown documents or R scripts. To make RStudio use the Conda environment, make sure to
+install Rstudio version>1.2 OUTSIDE your conda environment.
+
+You can download it here, https://www.rstudio.com/products/rstudio/download/preview/
+
+Using `conda install rstudio` will give you an older version of RStudio which
+includes less features for using Python code within R.
+
+You can then run
+
+    source activate vantage-project
+    rstudio 
+    
+This will open rstudio using your conda environment.
+Verify this by opening RStudio and running
+
+    library(reticulate)
+    py_config()
+
+You should see something as follows
+
+    python:         D:\Anaconda\envs\vantage-project\python.exe
+    libpython:      D:/Anaconda/envs/vantage-project/python36.dll
+    pythonhome:     D:\Anaconda\envs\vantage-project
+    version:        3.6.6 |Anaconda, Inc.| (default, Jun 28 2018, 11:27:44) [MSC v.1900 64 bit (AMD64)]
+    Architecture:   64bit
+    numpy:          D:\Anaconda\envs\vantage-project\lib\site-packages\numpy
+    numpy_version:  1.15.2
 
 Tanzania water pump maintenance prediction
 ==============================
