@@ -22,6 +22,7 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <script src="site_libs/htmlwidgets-1.2/htmlwidgets.js"></script>
@@ -172,6 +173,14 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 
 
@@ -209,6 +218,14 @@ $(document).ready(function () {
 
 <div class="fluid-row" id="header">
 
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 <h1 class="title toc-ignore">Grouped-variables</h1>
@@ -241,16 +258,16 @@ $(document).ready(function () {
 <h3>Scheme_name, scheme_management, installer, funder</h3>
 <p>These 4 features have far too many unique values to be used as categorical labels. In some cases we can bin groups by grouping the least occurring data as ‘other’, but in these cases the arity is too high.</p>
 <p>Together with spelling errors in these labels we won’t spend the effort to transform these values into something more useful with text processing.</p>
-<div id="htmlwidget-1c7cafea32ac34c96fd0" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1c7cafea32ac34c96fd0">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["","","","","","","","k","",""],["vwc","vwc","vwc","vwc","vwc","wug","","vwc","wug","vwc"],["","kkkt","dwe","government","dwe","dwe","dwe","","dwe","hesawa"],["","kkkt","hesawa","government of tanzania","government of tanzania","dwsp","rwssp","","netherlands","hifab"],[1311,841,616,615,600,567,522,513,457,450]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>scheme_name<\/th>\n      <th>scheme_management<\/th>\n      <th>installer<\/th>\n      <th>funder<\/th>\n      <th>n<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":5},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-3ffac8acd117e3ca67f8" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3ffac8acd117e3ca67f8">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10"],["","","","","","","","k","",""],["vwc","vwc","vwc","vwc","vwc","wug","","vwc","wug","vwc"],["","kkkt","dwe","government","dwe","dwe","dwe","","dwe","hesawa"],["","kkkt","hesawa","government of tanzania","government of tanzania","dwsp","rwssp","","netherlands","hifab"],[1311,841,616,615,600,567,522,513,457,450]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>scheme_name<\/th>\n      <th>scheme_management<\/th>\n      <th>installer<\/th>\n      <th>funder<\/th>\n      <th>n<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":5},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 <p>The scheme names are a mess. There are non-ambiguous names, spelling errors, numeric values, etc. Values such as like ‘Adra’, ‘ADRA’, ‘WOULD BANK’, etc.. are variations on each other. We can reduce this already by using the lowercase version, but not enough to warrant the inclusion of this variable.</p>
 <pre><code>## .
 ##                           K          None      Borehole Chalinze wate 
 ##         28166           682           644           546           405 
 ##             M 
 ##           400</code></pre>
-<div id="htmlwidget-6ac94cf6ffcdb366c37a" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-6ac94cf6ffcdb366c37a">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"],["14 Kambarage","A","A","A","ADP","ADP","ADP Simbo","ADP Simbo","ADP Simbu","Adra","ADRA","ADRA","African Barrick Gold","AIC","AIC kahunda","Akheri gravity water supply","Akheri gravity water supply","Akheri gravity water supply","Alpha crust","Alpha crust"],["functional","functional","functional needs repair","non functional","functional","non functional","functional","non functional","non functional","functional","functional","non functional","functional","functional","functional","functional","functional needs repair","non functional","functional","functional needs repair"],[7,23,2,17,6,3,15,10,1,1,7,1,1,1,1,8,2,3,1,1]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>scheme_name<\/th>\n      <th>status_group<\/th>\n      <th>n<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":3},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-deb02be94bff88dfe016" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-deb02be94bff88dfe016">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"],["14 Kambarage","A","A","A","ADP","ADP","ADP Simbo","ADP Simbo","ADP Simbu","Adra","ADRA","ADRA","African Barrick Gold","AIC","AIC kahunda","Akheri gravity water supply","Akheri gravity water supply","Akheri gravity water supply","Alpha crust","Alpha crust"],["functional","functional","functional needs repair","non functional","functional","non functional","functional","non functional","non functional","functional","functional","non functional","functional","functional","functional","functional","functional needs repair","non functional","functional","functional needs repair"],[7,23,2,17,6,3,15,10,1,1,7,1,1,1,1,8,2,3,1,1]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>scheme_name<\/th>\n      <th>status_group<\/th>\n      <th>n<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":3},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 <pre><code>## .
 ##             VWC             WUG                 Water authority 
 ##           36793            5206            3877            3153 

@@ -42,7 +42,7 @@ library(reticulate)
 # To render this document using the conda environment you can use,
 #   R -e "rmarkdown::render('data-exploration.Rmd')"
 
-use_condaenv('vantage-project', required = TRUE)    # Hopefully this issue is fixed and this will just work if the environment wasn't already activated
+#use_condaenv('vantage-project', required = TRUE)    # Hopefully this issue is fixed and this will just work if the environment wasn't already activated
 # use_python('D:/Anaconda/envs/vantage-project/python.exe')   # Alternatively this should work if you have an absolute path
 
 # A major issue is that (on Windows) we can't use python chunks in combination with conda

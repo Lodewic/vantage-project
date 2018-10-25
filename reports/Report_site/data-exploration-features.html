@@ -22,6 +22,7 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 
@@ -164,6 +165,14 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 
 
@@ -201,6 +210,14 @@ $(document).ready(function () {
 
 <div class="fluid-row" id="header">
 
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 <h1 class="title toc-ignore">Grouped-variables</h1>
@@ -210,6 +227,8 @@ $(document).ready(function () {
 </div>
 
 
+<pre class="r"><code># Load libraries
+library(tidyverse)</code></pre>
 <pre><code>## -- Attaching packages ---------------------------------- tidyverse 1.2.1 --</code></pre>
 <pre><code>## v ggplot2 3.0.0     v purrr   0.2.5
 ## v tibble  1.4.2     v dplyr   0.7.6
@@ -218,9 +237,40 @@ $(document).ready(function () {
 <pre><code>## -- Conflicts ------------------------------------- tidyverse_conflicts() --
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(broom)
+library(ggthemes)
+library(DT)
+library(knitr)</code></pre>
+<pre class="r"><code># Read the raw data
+data &lt;- read.csv(&quot;../data/raw/water_pump_set.csv&quot;)
+labels &lt;- read.csv(&quot;../data/raw/water_pump_labels.csv&quot;)
+features &lt;- read.csv(&quot;../data/raw/water_pump_features.csv&quot;)
+
+# Merge labels and features into single dataset by id
+df &lt;- merge(data, labels, by=&quot;id&quot;)
+
+# Let&#39;s add some more info to the feature info using tidyverse piping
+feature_desc &lt;- features %&gt;% filter(Feature %in% colnames(data)) %&gt;%
+  mutate(example = sapply(data[1, -1], as.character), # First row of the data without the &#39;id&#39; column
+       unique = map_int(data[,-1],function(x) length(unique(x))),
+       type = map_chr(data[,-1], function(x) class(unlist(x))), # 
+       nonzero = map_int(data[,-1], function(x) sum(as.character(x) != &quot;0&quot;)), # Nonzero values, assuming 0 usually means NA
+       max_single = map_int(data[,-1], function(x) max(table(x))),      # Observations of most occuring value
+       max_occurence = map_chr(data[,-1], function(x) names(which.max(table(x))))) # Highest occuring value</code></pre>
 <div id="features" class="section level2">
 <h2>Features</h2>
 <p>Each waterpump is described by 39 features and a unique id. The basic steps of this project are to understand the available features and think about which of these we will have to include, exclude or transform before setting up a predictive model.</p>
+<pre class="r"><code># Let&#39;s add some more info to the feature info using tidyverse piping
+feature_desc &lt;- features %&gt;% filter(Feature %in% colnames(data)) %&gt;%
+  mutate(example = sapply(data[1, -1], as.character), # First row of the data without the &#39;id&#39; column
+         unique = map_int(data[,-1],function(x) length(unique(x))),
+         type = map_chr(data[,-1], function(x) class(unlist(x))), # 
+         nonzero = map_int(data[,-1], function(x) sum(as.character(x) != &quot;0&quot;)), # Nonzero values, assuming 0 usually means NA
+         max_single = map_int(data[,-1], function(x) max(table(x))),      # Observations of most occuring value
+         max_occurence = map_chr(data[,-1], function(x) names(which.max(table(x))))) # Highest occuring value
+                                 
+# Let&#39;s glance at the numeric values in the dataset                               
+feature_desc %&gt;% filter(type %in% c(&quot;numeric&quot;, &quot;integer&quot;)) %&gt;% kable()              </code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -327,6 +377,7 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>feature_desc %&gt;% filter(!type %in% c(&quot;numeric&quot;, &quot;integer&quot;)) %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -691,6 +742,15 @@ $(document).ready(function () {
 <h3>Scheme_name, scheme_management, installer, funder</h3>
 <p>These 4 features have far too many unique values to be used as categorical labels. In some cases we can bin groups by grouping the least occurring data as ‘other’, but in these cases the arity is too high.</p>
 <p>Together with spelling errors in these labels we won’t spend the effort to transform these values into something more useful with text processing.</p>
+<pre class="r"><code>data %&gt;% 
+    select(scheme_name, scheme_management, installer, funder) %&gt;%
+    mutate_all(as.character) %&gt;%
+    mutate_all(tolower) %&gt;% # To lowercase since there are many typing &#39;errors&#39; or inconsistencies
+    group_by(scheme_name, scheme_management, installer, funder) %&gt;%
+    tally() %&gt;% 
+    arrange(desc(n)) %&gt;% 
+    head(10) %&gt;%
+    kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -775,11 +835,20 @@ $(document).ready(function () {
 </tbody>
 </table>
 <p>The scheme names are a mess. There are non-ambiguous names, spelling errors, numeric values, etc. Values such as like ‘Adra’, ‘ADRA’, ‘WOULD BANK’, etc.. are variations on each other. We can reduce this already by using the lowercase version, but not enough to warrant the inclusion of this variable.</p>
+<pre class="r"><code># Scheme names
+data %&gt;% select(scheme_name) %&gt;% table() %&gt;% sort(decreasing = T) %&gt;% head()</code></pre>
 <pre><code>## .
 ##                           K          None      Borehole Chalinze wate 
 ##         28166           682           644           546           405 
 ##             M 
 ##           400</code></pre>
+<pre class="r"><code># Half the data is missing data, and the rest is extremely scattered
+# Furthermore there are many unambiguous names and spelling errors like &#39;Adra&#39;, &#39;ADRA&#39;, &#39;WOULD BANK&#39;, etc..
+df %&gt;%
+    filter(scheme_name != &quot;&quot;) %&gt;%
+    group_by(scheme_name, status_group) %&gt;%
+    tally() %&gt;% head(20) %&gt;%
+    kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -891,6 +960,10 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code># Based on this we remove the scheme_name entirely</code></pre>
+<pre class="r"><code># Scheme management
+data %&gt;% select(scheme_management) %&gt;% table() %&gt;% sort(decreasing = T) %&gt;% 
+  head() %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -925,7 +998,24 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code># Plot label per scheme_management
+df %&gt;% select(scheme_management, status_group) %&gt;%
+    ggplot(aes(x = scheme_management, fill = status_group)) +
+    geom_bar() + coord_flip() +
+    ggtitle(&quot;Water pomp status voor management_scheme&quot;) +
+    theme_fivethirtyeight()</code></pre>
 <p><img src="data-exploration-features_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre class="r"><code># Most of the water pumps are from a handful of installers. 
+# We could consider grouping all the low occurences into a group &#39;other&#39;
+# Plot label per scheme_management
+scheme_management_groups = df %&gt;% select(scheme_management, status_group) %&gt;%
+    group_by(scheme_management) %&gt;%
+    tally() %&gt;%
+    top_n(10, n) 
+
+cat(sprintf(&quot;Scheme management in 10 groups accounts for %1.2f%% of the data. And just VWC is %1.2f%%&quot;, 
+            100 * sum(scheme_management_groups$n) / nrow(df),
+            100 * max(scheme_management_groups$n) / nrow(df)))</code></pre>
 <pre><code>## Scheme management in 10 groups accounts for 99.71% of the data. And just VWC is 61.94%</code></pre>
 <div id="installer-and-funder" class="section level4">
 <h4>Installer and funder</h4>
@@ -933,11 +1023,38 @@ $(document).ready(function () {
 <ul>
 <li>Possible to do string matching</li>
 </ul>
+<pre class="r"><code># installer
+data %&gt;% select(installer) %&gt;% table() %&gt;% sort(decreasing = T) %&gt;% head()</code></pre>
 <pre><code>## .
 ##        DWE            Government        RWE      Commu     DANIDA 
 ##      17402       3655       1825       1206       1060       1050</code></pre>
+<pre class="r"><code>length(unique(data$installer))</code></pre>
 <pre><code>## [1] 2146</code></pre>
+<pre class="r"><code># Most of the water pumps are from a handful of installers. 
+# We could consider grouping all the low occurences into a group &#39;other&#39;
+# Plot label per scheme_management
+installer_groups = df %&gt;% select(installer, status_group) %&gt;%
+    group_by(installer) %&gt;%
+    tally() %&gt;%
+    top_n(20, n)
+
+# Plot installer versus status_group to verify 
+df %&gt;% select(installer, status_group) %&gt;%
+    mutate(installer = ifelse(installer %in% installer_groups$installer, as.character(installer), &quot;other&quot;),
+           installer = ifelse(installer %in% c(&quot;&quot;, &quot;0&quot;), &quot;unknown&quot;, installer)) %&gt;%
+    ggplot(aes(x = installer, fill = status_group)) +
+    geom_bar() + coord_flip() +
+    ggtitle(&quot;Water pomp status voor installer&quot;, subtitle = &quot;Kleine groepen samengevoegd in &#39;other&#39;&quot;) +
+    theme_fivethirtyeight() </code></pre>
 <p><img src="data-exploration-features_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code># Show counts of installer labes, only top20
+# Notice that many of these have about the same number of observations and grouping all the others into
+# &#39;other&#39; is quite arbitrary since the &#39;other&#39; group will still be half the data. 
+# The number of &#39;larger&#39; groups and the number of spelling errors in the data require more detailed feature engineering
+# like some kind of string matching- which we will not spend our time on.
+# THIS FEATURE WILL BE REMOVED FROM THE MODELLING DATA</code></pre>
+<pre class="r"><code># funder
+data %&gt;% select(funder) %&gt;% table() %&gt;% sort(decreasing = T) %&gt;% head() %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -972,13 +1089,27 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>cat(sprintf(&quot;Of the %i unique funder names, %i overlap with the installer names!&quot;,
+            length(unique(data$funder)),
+            length(intersect(tolower(as.character(data$funder)), tolower(as.character(data$installer))))))</code></pre>
 <pre><code>## Of the 1898 unique funder names, 1065 overlap with the installer names!</code></pre>
+<pre class="r"><code># Due to the high overlap between funder and installer, we can assume that these two are heavily related and 
+# will probably give us the same difficulty as the funder names by themselves.
+# WE REMOVE THIS FEATURE FROM THE DATASET!</code></pre>
 </div>
 </div>
 <div id="extraction-types" class="section level3">
 <h3>Extraction types</h3>
+<pre class="r"><code># Groups for each extraction type to determine which has the most information
+df %&gt;% select(extraction_type, extraction_type_group, extraction_type_class) %&gt;%
+  apply(2, function(x) length(unique(x)))</code></pre>
 <pre><code>##       extraction_type extraction_type_group extraction_type_class 
 ##                    18                    13                     7</code></pre>
+<pre class="r"><code># Count label co-occurences to potentially remove some features as we have a 
+# tractable number of features (not 100s this time!)
+df %&gt;%
+    group_by(extraction_type, extraction_type_group, extraction_type_class) %&gt;%
+    tally() %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -1112,6 +1243,18 @@ $(document).ready(function () {
 </ul></li>
 </ul>
 <p>Let’s manually combine some of the feature groups into related groups.</p>
+<pre class="r"><code># Temporary data about the extraction type
+df_extraction &lt;- df %&gt;% 
+    mutate(
+        extraction_type = as.character(extraction_type),
+        extraction_type = ifelse(extraction_type %in% c(&quot;india mark ii&quot;, &quot;india mark iii&quot;), &quot;india mark&quot;, extraction_type),
+        extraction_type = ifelse(extraction_type %in% c(&quot;cemo&quot;, &quot;climax&quot;), &quot;motorpump&quot;, extraction_type),
+        extraction_type = ifelse(extraction_type %in% c(&quot;other - swn 81&quot;, &quot;swn 80&quot;), &quot;swn&quot;, extraction_type),
+        extraction_type = ifelse(extraction_type %in% c(&#39;other - mkulima/shinyanga&#39;,&#39;other - play pump&#39;, &#39;walimi&#39;), &quot;handpump&quot;, extraction_type)
+           ) %&gt;%
+    select(id, extraction_type, extraction_type_class)
+
+df_extraction %&gt;% group_by(extraction_type, extraction_type_class) %&gt;% tally() %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -1188,12 +1331,26 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code># Make a new table of group counts
+df_extraction %&gt;% 
+    mutate(extraction_group = paste(extraction_type, extraction_type_class, sep=&quot;-&quot;)) %&gt;%
+    group_by(extraction_group, extraction_type, extraction_type_class) %&gt;%
+    tally() %&gt;%
+    arrange(n) %&gt;%
+    ungroup() %&gt;%
+    mutate(extraction_type = factor(extraction_type, levels=extraction_type)) %&gt;% # Relevel to reorder plot
+    ggplot(aes(x = extraction_type, y = n, label = n, fill = extraction_type_class)) +
+        geom_bar(stat=&quot;identity&quot;, position=&quot;dodge&quot;) + 
+        ggtitle(&quot;Water pomp types na combineren van groepen&quot;) +
+        geom_text() + coord_flip() + theme_fivethirtyeight()</code></pre>
 <p><img src="data-exploration-features_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>Using two out of three extraction types, after some adjustments, in the data we can classify all the data in a way that none of the groups is truly underrepresented.</p>
 </div>
 <div id="management-and-management_group" class="section level3">
 <h3>management and management_group</h3>
 <p>These two variables seem to mean the exact same thing.</p>
+<pre class="r"><code># Cross table of only two variables
+df %&gt;% group_by(management, management_group) %&gt;% tally() %&gt;% knitr::kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -1265,11 +1422,14 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code># The management variable has more information than management_group</code></pre>
 <p>We will select the column with <em>more</em> information, so we keep the <code>management</code> variable and drop the <code>management_group</code>.</p>
 </div>
 <div id="payment-and-payment_type" class="section level3">
 <h3>Payment and payment_type</h3>
 <p>The payment and payment type columns also mean the exact same thing.</p>
+<pre class="r"><code># Cross table of only two variables
+df %&gt;% group_by(payment, payment_type) %&gt;% tally() %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -1316,10 +1476,13 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code># The payments are exactly the same, we can drop either one.</code></pre>
 <p>The payment_type variables are more concise so we will drop the <code>payment</code> column.</p>
 </div>
 <div id="water-quality-and-quality-group" class="section level3">
 <h3>Water quality and quality group</h3>
+<pre class="r"><code># Cross table of only two variables
+df %&gt;% group_by(water_quality, quality_group) %&gt;% tally() %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -1371,6 +1534,15 @@ $(document).ready(function () {
 </tr>
 </tbody>
 </table>
+<pre class="r"><code># Is water quality correlated to the water pump status?
+df %&gt;% group_by(water_quality, status_group) %&gt;%
+    tally() %&gt;%
+    group_by(water_quality) %&gt;% mutate(n = n / sum(n)) %&gt;%
+    filter(water_quality != &quot;soft&quot;) %&gt;%
+    ggplot(aes(x = water_quality, y = n, fill = status_group)) +
+    geom_bar(stat=&quot;identity&quot;) + coord_flip() + 
+    ggtitle(&quot;Water kwaliteit versus pomp status ratios&quot;) +
+    theme_fivethirtyeight()</code></pre>
 <p><img src="data-exploration-features_files/figure-html/quality%20vs%20status-1.png" width="672" /></p>
 <p>The <code>water_quality</code> contains more information so we will drop the <code>quality_group</code>.</p>
 <p>The <code>water_quality</code> is also related to the <code>amount_tsh</code> in the data, even though we are removing <code>amount_tsh</code>(!) The only pumps where a significant amount of water is available is the ones where ‘soft’ water was found. So even though we are leaving out <code>amount_tsh</code>, we will still capture some of its information by including the <code>water_quality</code>.</p>
@@ -1379,6 +1551,8 @@ $(document).ready(function () {
 <div id="quantity-and-quantity_group" class="section level3">
 <h3>Quantity and quantity_group</h3>
 <p>The <code>quantity</code> and <code>quantity_group</code> sounds like they have the same relation as the water quality. Let’s check!</p>
+<pre class="r"><code># Cross table of only two variables
+df %&gt;% group_by(quantity, quantity_group) %&gt;% tally()</code></pre>
 <pre><code>## # A tibble: 5 x 3
 ## # Groups:   quantity [?]
 ##   quantity     quantity_group     n
@@ -1398,6 +1572,8 @@ $(document).ready(function () {
 <li>source_class, 4 categories of all source types</li>
 <li>source_type, the same as <code>source</code> except that unkown=other</li>
 </ul>
+<pre class="r"><code># Cross table of only two variables
+df %&gt;% group_by(source, source_class, source_type) %&gt;% tally()</code></pre>
 <pre><code>## # A tibble: 10 x 4
 ## # Groups:   source, source_class [?]
 ##    source               source_class source_type              n
@@ -1414,6 +1590,14 @@ $(document).ready(function () {
 ## 10 unknown              unknown      other                   66</code></pre>
 <p>The water <code>source</code> is more detailed than <code>source_class</code> and contains the exact same values as <code>source_type</code>. So let’s keep only the <code>source</code> and <code>source_type</code>. However, the <code>source_class</code> contains only 3 categories and this more general distinction may in fact help us make predictions. We can calculate the feature importance later, so let’s keep both variables in our data and verify whether inclusion of <code>source_class</code> improves the model at all.</p>
 <p>Alternatively, is the water quality correlated at all to water pump status?</p>
+<pre class="r"><code># Is water quality correlated to the water pump status?
+df %&gt;% group_by(source, source_class, status_group) %&gt;%
+    tally() %&gt;%
+    group_by(source) %&gt;% mutate(n = n / sum(n)) %&gt;%
+    ggplot(aes(x = source, y = n, fill = status_group)) +
+    geom_bar(stat=&quot;identity&quot;) + coord_flip() + 
+    ggtitle(&quot;Water bron versus pomp status ratios&quot;) +
+    theme_fivethirtyeight()</code></pre>
 <p><img src="data-exploration-features_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 <p>The source is definitely not a perfect prediction of water pump status, but at least a distinction between classes could be beneficial. It remains to be seen whether the water source is truly indicative of the water pump status, why would a pump near a lake be more likely to be non-functional than that near a spring? Unless the water source has dried up, but this would rather affect multiple pumps in the same area.</p>
 <p>If there was more time available we could find if there is just a cluster of water pumps at a single lake that are non-functional because of regional differences, for example. The location of a pump probably determines the water source, and since we will already take the gps-coordinates into account we might not be including any new information with the <code>source</code> feature.</p>
@@ -1421,6 +1605,8 @@ $(document).ready(function () {
 <div id="waterpoint_type-and-waterpoint_type_group" class="section level3">
 <h3>Waterpoint_type and waterpoint_type_group</h3>
 <p>Finally, this group of two variables may be reduced to a single variable. They are once again the exacty same feature.</p>
+<pre class="r"><code># Cross table of only two variables
+df %&gt;% group_by(waterpoint_type, waterpoint_type_group) %&gt;% tally()</code></pre>
 <pre><code>## # A tibble: 7 x 3
 ## # Groups:   waterpoint_type [?]
 ##   waterpoint_type             waterpoint_type_group     n
@@ -1450,9 +1636,12 @@ $(document).ready(function () {
 <div id="amount_tsh" class="section level3">
 <h3>amount_tsh</h3>
 <p>The amount of water available to the water pump seems like an important feature, but it only consists of 98 unique values! Let’s see what is going on here.</p>
+<pre class="r"><code># Plot amount_tsh as barplot
+table(df$amount_tsh)[1:10]</code></pre>
 <pre><code>## 
 ##     0   0.2  0.25     1     2     5     6     7     9    10 
 ## 41639     3     1     3    13   376   190    69     1   806</code></pre>
+<pre class="r"><code># Most of the values are 0</code></pre>
 <p>Ah, there are many <code>0</code> values in the data. Based on all the other values of this feature it does not seem likely that <code>0</code> always indicates a missing value; <code>0</code> seems like it can be a possible value. However, there is no way to differentiate between missing values and dry water pumps.</p>
 <p>For now we remove this data from our cleaned data because of the large number of ‘missing’ values.</p>
 </div>
@@ -1465,6 +1654,9 @@ $(document).ready(function () {
 <li>latitude</li>
 </ul>
 <p>We expect these to be continuous values.</p>
+<pre class="r"><code># See which gps coordinates occur more than once
+df %&gt;% group_by(gps_height, longitude, latitude) %&gt;%
+  tally() %&gt;% filter(n &gt; 2) %&gt;% kable()</code></pre>
 <table>
 <thead>
 <tr class="header">
@@ -1496,6 +1688,7 @@ $(document).ready(function () {
 <div id="num_private" class="section level3">
 <h3>num_private</h3>
 <p>num_private comes without a feature description, but with a lot of zero-values.</p>
+<pre class="r"><code>num_private_tbl &lt;- table(df$num_private)[1:10]</code></pre>
 <p>We will remove <code>num_private</code> from the data since 98.7255892% of the observations is zero/missing.</p>
 </div>
 <div id="construction_year" class="section level3">
@@ -1504,6 +1697,7 @@ $(document).ready(function () {
 <p>There are a TON of missing values in this variable. But a baseline value such as the median is better than using 0 for missing values.</p>
 <p>For missing values we should definitely impute some value. Traditionally the most straightforward way is to just impute the mean or median value. We may correct for region or pump type to improve this imputation. A quick glance at factors that may indicate a missing construction_year we don’t find any. So let us use a very simple imputation method to save time.</p>
 <p>Furthermore, we’re better off to actually add the <code>age</code> variable to the data! Simply by calculating the difference between <code>date_recorded</code> and <code>construction_year</code>.</p>
+<pre class="r"><code>barplot(table(df$construction_year), main=&quot;Distribution of construction_year&quot;)</code></pre>
 <p><img src="data-exploration-features_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
 </div>
 </div>
@@ -1516,6 +1710,7 @@ $(document).ready(function () {
 <li>ward, 2092 unique values</li>
 </ul>
 <p>Upon closer inspection, from the <code>lga</code> variable we can infer some information!</p>
+<pre class="r"><code>table(df$lga)[1:10]</code></pre>
 <pre><code>## 
 ## Arusha Rural Arusha Urban       Babati     Bagamoyo         Bahi 
 ##         1252           63          511          997          224 

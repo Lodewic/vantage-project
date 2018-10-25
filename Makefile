@@ -1,4 +1,4 @@
-all: requirements model finaldataset
+all: requirements finaldataset report
 .PHONY: clean data lint requirements sync_data_to_s3 sync_data_from_s3
 
 #################################################################################
@@ -23,7 +23,8 @@ endif
 #################################################################################
 
 ## Install Python Dependencies
-requirements: environment.log
+requirements: environment.yml
+	conda env update --prune -f environment.yml
 
 ## Make Dataset
 data: requirements finaldataset
@@ -37,15 +38,7 @@ clean:
 lint:
 	flake8 vantage
 
-## Upload Data to S3
-sync_data_to_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync data/ s3://$(BUCKET)/data/
-else
-	aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
-endif
-
-## Download Data from S3
+# Download Data from S3 DrivenData public url
 sync_data_from_s3:
 	# Replaced this with hard-coded public links in get_data.py
 	$(PYTHON_INTERPRETER) vantage/data/get_data.py
@@ -87,9 +80,11 @@ encodedataset: data/interim/data_encoded.csv
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
-environment.log: environment.yml
-	conda env update --prune -f environment.yml
-	touch environment.log
+## This rule didn't work in Windows(?) It would not actually create environment.log
+## Changed the requirements rule instead 
+# environment.log: environment.yml
+# 	conda env update --prune -f environment.yml
+# 	touch environment.log
 	
 data/processed/dataset.csv:	data/interim/data_encoded.csv
 	$(PYTHON_INTERPRETER) vantage/data/clean_data
