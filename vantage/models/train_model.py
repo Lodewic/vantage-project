@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-import click
-import logging
-from pathlib import Path
-from dotenv import find_dotenv, load_dotenv
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -30,15 +25,13 @@ OUT_FILEPATH = "./data/processed/data_predicted.csv"
     with a specific dataset in mind but with minor tweaks it should be
     fairly straightforward to extend these methods to any other dataset.
 """
-logger = logging.getLogger(__name__)
-logger.info('Train randomForest model...')
 
 # Read data using pandas as simple as possible
 X = pd.read_csv(DATA_FILEPATH)
 X.drop('Unnamed: 0', axis=1, inplace=True)
 
 # Subset for speed
-X = X.iloc[1:1000,:]
+# X = X.iloc[1:1000,:]
 
 # Assume column labels in 'status_group'
 y = X.pop('status_group')
@@ -51,9 +44,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y,
 # Build a forest and compute the feature importances
 forest = ExtraTreesClassifier(n_estimators=250,
                               random_state=0)
+print("Training model")
 forest.fit(X_train, y_train)
 forest.predict(X_test)
-cross_val_score(forest, X_train, y_train, cv=3)
+cross_val_score(forest, X_train, y_train, cv=10)
 
 # Get feature importances
 importances = forest.feature_importances_
@@ -76,6 +70,8 @@ plt.bar(X.columns, importances[indices],
 plt.xticks(X.columns, X.columns)
 plt.xlim([-1, X.shape[1]])
 plt.show()
+
+
 # 
 # 
 # #try with logistic regression to establish a baseline

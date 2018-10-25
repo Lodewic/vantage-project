@@ -25,6 +25,14 @@ One should be up and running as follows:
     source activate vantage-project
     make requirements
     
+Note: you may have to create the `data/` repositories first, you need
+
+  - data/raw
+  - data/interim
+  - data/external
+  - data/processed
+
+    
 To then create processed data and run all rules in the Makefile, activate your environment
 and then call
 
@@ -37,18 +45,14 @@ This will,
   - clean the data and encode the data for model training
   - Create a report website under `reports/Report_site/index.html' with some exploratory analysis
     * Really this was more of a proof of concept.
-  - ... then that's it for now.
+  
+Since it is unfinished it is not included in the Makefile, but...
+  - With your activated environment you can run `python vantage/models/train_model.py
+    * This will train an extremely basic random forest on 70% of the data
+    * Output is not written anywhere
+    * Output presentation in Rmarkdown was removed.
+  
     
-The data for this project was already hosted on Amazon S3, to sync this data use
-
-    make sync_data_from_s3
-    
-Note: you may have to create the `data/` repositories first, you need
-
-  - data/raw
-  - data/interim
-  - data/external
-  - data/processed
 
 To run the computational data transformation steps:
     
